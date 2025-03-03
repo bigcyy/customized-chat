@@ -1,7 +1,13 @@
 <template>
   <div class="app-layout">
-    <AppHeader />
-    <AppMain />
+    <el-container>
+      <el-header>
+        <AppHeader />
+      </el-header>
+      <el-container>
+        <el-main><AppMain /></el-main>
+      </el-container>
+    </el-container>
   </div>
 </template>
 

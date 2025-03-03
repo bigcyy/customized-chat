@@ -8,10 +8,10 @@ const settingRouter = {
     title: '设置',
     icon: 'setting'
   },
-  redirect: '/model',
+  redirect: '/setting/model',
   children: [
     {
-      path: '/model',
+      path: '/setting/model',
       name: 'model',
       meta: {
         title: '模型',

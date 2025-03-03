@@ -21,6 +21,7 @@ public class MPCodeGenerator {
         FastAutoGenerator.create("jdbc:mysql://localhost:3306/cchat", "root", "root")
                 // 全局配置
                 .globalConfig(builder -> builder.author("CYY")
+                        .enableSpringdoc()
                         .outputDir(System.getProperty("user.dir") + "/web/src/main/java"))
                 // 包配置
                 .packageConfig(builder ->

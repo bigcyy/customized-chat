@@ -11,7 +11,7 @@ const envDir = './env'
 export default defineConfig(({ mode }) => {
   const ENV = loadEnv(mode, envDir)
   const proxyConf = {
-    '/api/api/v1': {
+    '/api': {
       target: ENV.VITE_API_URL,
       changeOrigin: true,
       rewrite: (path: string) => path.replace(/^\/api/, '')

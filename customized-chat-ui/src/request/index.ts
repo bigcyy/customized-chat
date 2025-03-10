@@ -146,3 +146,22 @@ export const del: (
 ) => Promise<Result<any>> = (url, params, data, loading, timeout) => {
   return promise(request({ url: url, method: 'delete', params, data, timeout }), loading)
 }
+
+/**
+ * 流处理
+ * @param url  url地址
+ * @param data 请求body
+ * @returns
+ */
+export const postStream: (url: string, data?: unknown) => Promise<Result<any> | any> = (
+  url,
+  data
+) => {
+  const headers: HeadersInit = { 'Content-Type': 'application/json' }
+
+  return fetch(url, {
+    method: 'POST',
+    body: data ? JSON.stringify(data) : undefined,
+    headers: headers
+  })
+}

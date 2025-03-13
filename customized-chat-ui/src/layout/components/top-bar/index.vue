@@ -2,27 +2,37 @@
   <div class="top-bar-container flex-between">
     <div class="top-bar-left app-title-container flex-center h-full">
       <div class="app-title flex-center cursor h-full" @click="router.push('/')">
-        <img src="../../../assets/logo.png" alt="logo" />
+        <img :src="Logo" alt="logo" />
         <span>CChat</span>
       </div>
     </div>
     <div class="top-bar-center flex-center h-full">
       <TopMenu />
     </div>
-    <div class="top-bar-right flex-center h-full">
-      <el-link :href="githubUrl" target="_blank" class="github-link flex-center">
-        <el-icon class="github-icon"><Platform /></el-icon>
-        <span class="star-count">{{ starCount }}</span>
-      </el-link>
+    <div class="top-bar-right">
+      <div class="flex-center h-full gap-2">
+        <el-tooltip :content="`项目地址⭐${starCount}`">
+          <a target="_blank" :href="githubUrl">
+            <IconFont name="icon-github-fill" size="20" />
+          </a>
+        </el-tooltip>
+        <el-tooltip :content="`用户手册`">
+          <a target="_blank" :href="githubUrl">
+            <IconFont name="icon-yonghushouce" size="20" />
+          </a>
+        </el-tooltip>
+      </div>
+      <Avatar />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Platform } from '@element-plus/icons-vue'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import TopMenu from './top-menu/index.vue'
+import Logo from '@/assets/logo.png'
+import Avatar from './avatar/index.vue'
 
 const router = useRouter()
 const starCount = ref(0)
@@ -55,6 +65,12 @@ onMounted(() => {
       width: auto;
       object-fit: contain;
     }
+  }
+
+  .top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
   }
 }
 </style>

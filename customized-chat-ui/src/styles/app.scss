@@ -1,3 +1,11 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+a {
+  color: #000000;
+  text-decoration: none;
+}
 h1 {
   font-size: 24px;
 }
@@ -38,6 +46,18 @@ h5 {
 
 .align-center {
   align-items: center;
+}
+
+.gap-1 {
+  gap: var(--app-base-px);
+}
+
+.gap-2 {
+  gap: calc(var(--app-base-px) * 2);
+}
+
+.gap-3 {
+  gap: calc(var(--app-base-px) * 3);
 }
 
 .p-8 {
@@ -116,6 +136,16 @@ h5 {
   margin-right: calc(var(--app-base-px) * 3);
 }
 
+.my-8 {
+  margin-top: var(--app-base-px);
+  margin-bottom: var(--app-base-px);
+}
+
+.mx-8 {
+  margin-top: var(--app-base-px);
+  margin-bottom: var(--app-base-px);
+}
+
 .w-full {
   width: 100%;
 }
@@ -125,6 +155,16 @@ h5 {
 
 .w-240 {
   width: 240px;
+}
+
+.text-sm {
+  font-size: 14px;
+}
+
+.divider {
+  border: 1px solid #dee0e3;
+  border-top: 1px;
+  margin: 8px 0;
 }
 
 /**
@@ -150,4 +190,26 @@ h5 {
     content: '';
     background: var(--el-color-primary);
   }
+}
+
+/*
+  超出省略号
+*/
+
+.ellipsis {
+  display: inline-block;
+  max-width: 130px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/*
+  双行超出省略号，其他行数自定义 -webkit-line-clamp
+*/
+.ellipsis-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }

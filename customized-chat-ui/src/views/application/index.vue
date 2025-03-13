@@ -1,25 +1,25 @@
 <template>
-  <div class="content-container">
+  <div class="">
     <div class="flex-between">
       <h4>应用</h4>
       <el-input v-model="search" placeholder="请输入内容" style="width: 240px" />
     </div>
     <div class="content-body">
       <el-row :gutter="20">
-        <el-col :span="8">
-          <el-card shadow="hover" class="application-card">
-            <div class="cursor flex align-center" @click="openCreateApplication">
+        <el-col :span="6">
+          <el-card shadow="hover" class="application-card application-start" style="--el-card-padding: 8px">
+            <div class="cursor flex align-center application-start-item" @click="openCreateApplication">
               <el-icon class="mr-8"><DocumentAdd /></el-icon>
-              <span>创建应用</span>
+              <span class="text-sm">创建应用</span>
             </div>
-            <el-divider />
-            <div class="cursor flex align-center">
-              <el-icon class="mr-8"><Upload /></el-icon>
-              <span>导入应用</span>
+            <div class="divider"></div>
+            <div class="cursor flex align-center application-start-item">
+              <el-icon class="mr-8 "><Upload /></el-icon>
+              <span class="text-sm">导入应用</span>
             </div>
           </el-card>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="6">
           <el-card shadow="hover" class="application-card">
             <div class="card-content">
               <div class="card-header">
@@ -35,12 +35,16 @@
               <div class="card-description">test</div>
               <div class="card-actions">
                 <el-button-group>
-                  <el-button type="primary" text>
-                    <el-icon><VideoPlay /></el-icon>
-                  </el-button>
-                  <el-button type="primary" text @click="openApplicationSetting">
-                    <el-icon><Setting /></el-icon>
-                  </el-button>
+                  <el-tooltip content="演示" placement="top">
+                    <el-button type="primary" text>
+                      <el-icon><VideoPlay /></el-icon>
+                    </el-button>
+                  </el-tooltip>
+                  <el-tooltip content="设置" placement="top">
+                    <el-button type="primary" text @click="openApplicationSetting">
+                      <el-icon><Setting /></el-icon>
+                    </el-button>
+                  </el-tooltip>
                   <el-button type="primary" text>
                     <el-icon><More /></el-icon>
                   </el-button>
@@ -80,9 +84,29 @@ const openApplicationSetting = () => {
 </script>
 
 <style lang="scss" scoped>
+.application-start {
+  background-color: #eff0f1;
+
+  &:hover {
+    background-color: #ffffff;
+  }
+
+  .application-start-item {
+    padding: 8px;
+    border-radius: 2px;
+
+    &:hover {
+      background-color: #eff0f1;
+    }
+  }
+}
+
+.content-body {
+  margin-top: 20px;
+}
+
 .application-card {
   height: 160px;
-
   .card-content {
     height: 100%;
     display: flex;

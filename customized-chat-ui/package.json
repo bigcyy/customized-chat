@@ -24,6 +24,8 @@
     "@types/nprogress": "^0.2.3",
     "@vitejs/plugin-vue": "^5.1.2",
     "@vue/tsconfig": "^0.7.0",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
     "sass": "^1.85.0",
     "typescript": "~5.7.2",
     "unplugin-auto-import": "^19.1.0",

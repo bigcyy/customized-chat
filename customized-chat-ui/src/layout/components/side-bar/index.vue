@@ -1,12 +1,12 @@
 <template>
-  <div>
+  <div class="side-bar">
     <el-scrollbar>
-      <el-menu router>
+      <el-menu :default-active="activeMenu" router class="side-bar-menu">
         <SideBarItem
           v-for="(menu, index) in menuList"
           :key="index"
           :menu="menu"
-          :activeMenu="route.path"
+          :activeMenu="activeMenu"
         />
       </el-menu>
     </el-scrollbar>
@@ -25,6 +25,21 @@ const menuList = computed(() => {
   const { meta } = route
   return getChildRouteListByPathAndName(meta.parentPath, meta.parentName)
 })
+
+const activeMenu = computed(() => {
+  const { path, meta } = route
+  return meta.active || path
+})
+
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.side-bar {
+  height: 100%;
+}
+.side-bar-menu {
+  height: calc(100vh - 130px);
+  padding-right: 10px;
+  margin-right: 10px;
+}
+</style>

@@ -1,9 +1,7 @@
 package com.cyy.chat.provider;
 
-import com.cyy.common.exception.ClientGlobalException;
 import io.swagger.v3.oas.models.OpenAPI;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.model.ModelDescription;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
@@ -47,17 +45,20 @@ public class OpenAIProvider implements EnrichedModelProvider {
     }
 
     @Override
-    public Boolean checkModelConnect(String baseUrl, String apiKey, String modelId) {
-        OpenAiApi api = OpenAiApi.builder().baseUrl(baseUrl).apiKey(apiKey).build();
-        OpenAiChatModel chatModel = OpenAiChatModel.builder().openAiApi(api).build();
-        OpenAiChatOptions options = OpenAiChatOptions.builder().model(OpenAiApi.ChatModel.valueOf(modelId)).build();
-        Prompt prompt = new Prompt("only say hi", options);
-        try {
-            ChatResponse response = chatModel.call(prompt);
-            return response != null;
-        }catch (RuntimeException err){
-            throw new ClientGlobalException("无法访问模型");
-        }
+    public ChatModel getChatModel(String baseUrl, String apiKey, String modelId) {
+        OpenAiApi api = OpenAiApi.builder()
+                .baseUrl(baseUrl)
+                .apiKey(apiKey)
+                .build();
+
+        OpenAiChatOptions options = OpenAiChatOptions.builder()
+                .model(OpenAiApi.ChatModel.valueOf(modelId))
+                .build();
+
+        return OpenAiChatModel.builder()
+                .openAiApi(api)
+                .defaultOptions(options)
+                .build();
     }
 
 }

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cyy.chat.dao.ChatMessageMapper">
+    <select id="getLastMessage" resultType="com.cyy.chat.model.ChatMessage">
+        SELECT
+            *
+        FROM
+            chat_message cm
+        WHERE
+            cm.session_id = #{sessionId}
+          AND cm.message_index = (
+            SELECT
+                MAX( message_index ) AS last_index
+            FROM
+                chat_message
+            WHERE
+                session_id = #{sessionId})
+    </select>
+</mapper>

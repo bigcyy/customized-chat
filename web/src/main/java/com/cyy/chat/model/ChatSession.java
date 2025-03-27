@@ -8,6 +8,8 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -24,6 +26,7 @@ import lombok.ToString;
 @ToString
 @TableName("chat_session")
 @Schema(name = "ChatSession", description = "聊天会话表")
+@Builder
 public class ChatSession implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -45,7 +48,7 @@ public class ChatSession implements Serializable {
      * 会话摘要
      */
     @Schema(description = "会话摘要")
-    private String abstract;
+    private String chatAbstract;
 
     /**
      * 最后更新时间

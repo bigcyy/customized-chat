@@ -18,6 +18,9 @@ spring:
     exclude:
           - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
 
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/*.xml
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

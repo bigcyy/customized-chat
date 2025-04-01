@@ -2,9 +2,9 @@ package com.cyy.chat.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.cyy.chat.controller.dto.ApplicationDto;
+import com.cyy.chat.controller.dto.TempChatDto;
 import com.cyy.chat.model.Application;
 import com.cyy.chat.model.ChatMessage;
-import com.cyy.chat.model.ChatRecord;
 import com.cyy.chat.model.ChatSession;
 import com.cyy.chat.service.IApplicationService;
 import com.cyy.chat.service.IChatRecordService;
@@ -12,10 +12,10 @@ import com.cyy.chat.service.IChatSessionService;
 import com.cyy.common.converter.BeanConverter;
 import com.cyy.common.exception.ClientGlobalException;
 import com.cyy.common.utils.R;
+import com.cyy.common.utils.SnowFlakeIdGenerator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
-import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.stereotype.Controller;
@@ -67,6 +67,22 @@ public class ApplicationController {
         return R.ok().data("sessionId",session.getId());
     }
 
+    @PostMapping("/temp/chat/session")
+    @Operation(
+            summary = "打开临时聊天会话"
+    )
+    public R openTempChatSession(){
+        // todo 添加缓存后这里可以预处理数据
+        return R.ok().data("sessionId", SnowFlakeIdGenerator.generateId());
+    }
+
+    @PostMapping(value = "/temp/chat/session/{sessionId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> tempChat(@PathVariable Long sessionId, @RequestBody TempChatDto tempChatDto){
+        // todo: 通过 sessionId 去获取对话
+        ChatSession session = ChatSession.builder().id(sessionId).build();
+        return chatRecordService.tempChat(tempChatDto.getApplication(),session,tempChatDto.getChatMessage(),tempChatDto.getChatHistories());
+    }
+
     @PostMapping(value = "/{applicationId}/chat/session/{sessionId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> chat(@PathVariable Long applicationId, @PathVariable Long sessionId, @RequestBody ChatMessage userMessage){
         // 检查应用 id
@@ -84,7 +100,7 @@ public class ApplicationController {
             throw new ClientGlobalException("会话不存在");
         }
         // 执行聊天
-        return chatRecordService.chat(application,chatSession, userMessage);
+        return chatRecordService.chat(application, chatSession, userMessage);
     }
 
 }

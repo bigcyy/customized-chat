@@ -15,15 +15,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.DefaultChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.chat.messages.*;
 import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
-import org.springframework.ai.model.Content;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -56,8 +53,6 @@ public class ChatRecordServiceImpl extends ServiceImpl<ChatRecordMapper, ChatRec
 
     @Override
     public Flux<String> chat(Application application, ChatSession chatSession, ChatMessage userMessage) {
-        //todo 封装成工作流
-
         // 保存当前信息
         ChatMessage lastMessage = chatMessageMapper.getLastMessage(chatSession.getId());
 
@@ -70,30 +65,10 @@ public class ChatRecordServiceImpl extends ServiceImpl<ChatRecordMapper, ChatRec
                 .build();
 
         chatMessageMapper.insert(userMessage);
-        // 获取应用对应的模型信息
-        Long modelId = application.getModelId();
-        if(modelId == null){
-            throw new ApplicationNoModelConfigException();
-        }
-        Model model = modelService.getById(modelId);
-        if(model == null) {
-            throw new ApplicationNoModelConfigException();
-        }
-        // 封装 MessageList
-//        List<Message> messageList = this.buildMessageList(application, chatSession, chatRecord, model);
-        // 获取应用的模型配置
-//        ModelSetting modelSetting = this.getModelSetting(application, model);
-        // 将所有信息封装成 prompt
-//        Prompt prompt = new Prompt(messageList);
-        // 根据模型信息创建模型
-        ChatModel chatModel = modelFactory
-                .getProvider(model.getProvider())
-                .getChatModel(model.getApiUrl(), model.getApiKey(), model.getModelName());
-        // 调用模型获取响应
 
-        var chatClient = ChatClient.builder(chatModel)
-                .defaultAdvisors(new MessageChatMemoryAdvisor(dbMemory))
-                .build();
+        ChatModel chatModel = buildChatModel(application.getModelId());
+
+        ChatClient chatClient = buildChatClient(dbMemory, chatModel);
 
         return chatClient
                 .prompt(userMessage.getMessageText())
@@ -101,6 +76,30 @@ public class ChatRecordServiceImpl extends ServiceImpl<ChatRecordMapper, ChatRec
                     advisorSpec.param("chat_memory_conversation_id", chatSession.getId());
                     advisorSpec.param("chat_memory_response_size", 4);
                 })
+                .stream()
+                .content();
+    }
+
+    @Override
+    public Flux<String> tempChat(Application application, ChatSession chatSession, ChatMessage userMessage, List<ChatMessage> chatHistories) {
+
+        // 获取应用对应的模型信息
+        ChatModel chatModel = buildChatModel(application.getModelId());
+
+        // 封装记忆
+        InMemoryChatMemory memory = new InMemoryChatMemory();
+        if(chatHistories != null && !chatHistories.isEmpty()){
+            chatHistories.sort(Comparator.comparing(ChatMessage::getMessageIndex));
+            List<Message> messages = chatMessageListToSpringAiMessageList(chatHistories);
+            memory.add(String.valueOf(chatSession.getId()),messages);
+        }
+
+        // 构建客户端
+        ChatClient chatClient = buildChatClient(memory, chatModel);
+
+        // 执行聊天
+        return chatClient
+                .prompt(userMessage.getMessageText())
                 .stream()
                 .content();
     }
@@ -184,4 +183,60 @@ public class ChatRecordServiceImpl extends ServiceImpl<ChatRecordMapper, ChatRec
         return messageList;
     }
 
+    /**
+     * 构建聊天代理
+     * @param memory 聊天记忆
+     * @param model 被代理的模型
+     * @return 包含了模型和模型 Advisors 的聊天代理
+     */
+    private ChatClient buildChatClient(ChatMemory memory, ChatModel model){
+        return ChatClient.builder(model)
+                .defaultAdvisors(new MessageChatMemoryAdvisor(memory))
+                .build();
+    }
+
+    /**
+     * 根据模型 id 创建模型
+     * @param modelId 模型 id
+     */
+    private ChatModel buildChatModel(Long modelId){
+        if(modelId == null){
+            throw new ApplicationNoModelConfigException();
+        }
+        Model model = modelService.getById(modelId);
+        if(model == null) {
+            throw new ApplicationNoModelConfigException();
+        }
+        return modelFactory
+                .getProvider(model.getProvider())
+                .getChatModel(model.getApiUrl(), model.getApiKey(), model.getModelName());
+    }
+
+    private Message chatMessageToSpringAiMessage(ChatMessage message){
+        if(message == null){
+            throw new SystemGlobalException("消息为空");
+        }
+        if(message.getRole() == null){
+            throw new SystemGlobalException("消息角色为空");
+        }
+        if(MessageType.USER == MessageType.valueOf(message.getRole())){
+            return new UserMessage(message.getMessageText());
+        }else if(MessageType.ASSISTANT == MessageType.valueOf(message.getRole())){
+            return new AssistantMessage(message.getMessageText());
+        }else {
+            throw new SystemGlobalException("消息类型错误");
+        }
+    }
+
+    /**
+     * 将 ChatMessage 转为 SpringAi 的 Message
+     * @param messages 消息列表
+     * @return SpringAi 的 Message 列表
+     */
+    private List<Message> chatMessageListToSpringAiMessageList(List<ChatMessage> messages){
+        if(messages == null){
+            return List.of();
+        }
+        return messages.stream().map(this::chatMessageToSpringAiMessage).toList();
+    }
 }

@@ -21,7 +21,7 @@ import java.util.List;
 public interface IChatRecordService extends IService<ChatRecord> {
 
     Flux<String> chat(Application application, ChatSession chatSession, ChatMessage userMessage);
-
+    Flux<String> tempChat(Application application, ChatSession chatSession, ChatMessage userMessage,List<ChatMessage> chatHistories);
     List<Message> buildMessageList(Application application, ChatSession chatSession, ChatRecord chatRecord, Model model);
 
     ModelSetting getModelSetting(Application application, Model model);

@@ -8,10 +8,11 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@Schema(name = "Application", description = "")
+@Schema(name = "Application", description = "应用信息")
 public class ApplicationDto {
-    @Schema(description = "应用 id")
+    @Schema(description = "应用 id", example = "2")
     private Long id;
+
     @Schema(description = "应用名称", example = "demo", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 

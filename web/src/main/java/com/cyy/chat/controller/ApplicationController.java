@@ -14,12 +14,15 @@ import com.cyy.common.exception.ClientGlobalException;
 import com.cyy.common.utils.R;
 import com.cyy.common.utils.SnowFlakeIdGenerator;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.stereotype.Controller;
 import reactor.core.publisher.Flux;
+
+import java.util.List;
 
 /**
  * <p>
@@ -50,6 +53,28 @@ public class ApplicationController {
                 .convert();
         applicationService.save(app);
         return R.ok().data("applicationId",app.getId());
+    }
+
+    @PutMapping
+    @Operation(summary = "更新应用信息")
+    public R update(@RequestBody ApplicationDto applicationDto) {
+        Application app = BeanConverter.source(applicationDto).target(Application.class).convert();
+        applicationService.updateById(app);
+        return R.ok();
+    }
+
+    @DeleteMapping
+    @Operation(summary = "删除应用")
+    public R delete(
+            @Parameter(description = "应用 id", example = "1") @RequestParam Long applicationId) {
+        applicationService.removeById(applicationId);
+        return R.ok();
+    }
+
+    @GetMapping("/{applicationId}")
+    public R get(@Parameter(description = "应用 id", example = "1") @PathVariable Long applicationId) {
+        Application application = applicationService.getById(applicationId);
+        return R.ok().data("application",application);
     }
 
     @PostMapping("/{applicationId}/chat/session")

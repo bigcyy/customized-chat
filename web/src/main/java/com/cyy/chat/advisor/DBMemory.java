@@ -23,7 +23,7 @@ public class DBMemory implements ChatMemory {
     private ChatMessageMapper chatMessageMapper;
 
     @Override
-    public void add(String conversationId, List<Message> messages) {
+    public void add(String conversationId, List<Message> messageList) {
         // 查询会话对应的最后一次聊天
         ChatMessage lastMessage = chatMessageMapper.getLastMessage(Long.parseLong(conversationId));
         // 判断最后一次聊天是否是用户信息，若不是抛出异常
@@ -32,21 +32,22 @@ public class DBMemory implements ChatMemory {
         }
 
         // 插入新的聊天记录
-        if(messages.size() > 1){
+        if(messageList.size() > 1){
             // todo 什么时候会大于1？
         }else{
             // todo token花销
+            Message messagesLast = messageList.get(messageList.size() - 1);
             ChatMessage chatMessage;
             if(MessageType.USER == MessageType.valueOf(lastMessage.getRole())){
                 chatMessage = ChatMessage.builder()
-                        .messageText(messages.getLast().getText())
+                        .messageText(messagesLast.getText())
                         .messageIndex(lastMessage.getMessageIndex() + 1)
                         .sessionId(Long.parseLong(conversationId))
                         .role(MessageType.ASSISTANT.name())
                         .build();
             }else{
                 chatMessage = ChatMessage.builder()
-                        .messageText(messages.getLast().getText())
+                        .messageText(messagesLast.getText())
                         .messageIndex(lastMessage.getMessageIndex() + 1)
                         .sessionId(Long.parseLong(conversationId))
                         .role(MessageType.USER.name())

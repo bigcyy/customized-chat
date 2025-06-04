@@ -128,4 +128,10 @@ public class ApplicationController {
         return chatRecordService.chat(application, chatSession, userMessage);
     }
 
+    @GetMapping
+    @Operation(summary = "获取应用列表")
+    public R list() {
+        List<Application> applicationList = applicationService.list();
+        return R.ok().data("applicationList",applicationList);
+    }
 }

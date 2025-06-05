@@ -19,7 +19,7 @@
           class="custom-scrollbar"
         >
           <div class="mb-16" style="padding-left: 16px">
-            <h4 class="title-decoration-1" style="margin: 0">应用信息</h4>
+            <h4 class="title-decoration-1" style="margin: 0">Agent信息</h4>
           </div>
           <div style="flex: 1; display: flex; flex-direction: column">
             <el-form
@@ -28,10 +28,10 @@
               class="p-16"
               style="padding-top: 0"
             >
-              <el-form-item label="应用名称" required>
+              <el-form-item label="Agent名称" required>
                 <el-input
                   v-model="applicationInfo.name"
-                  placeholder="请输入应用名称"
+                  placeholder="请输入Agent名称"
                   maxlength="64"
                   :input-style="{ backgroundColor: '#fff' }"
                 >
@@ -40,11 +40,11 @@
                   </template>
                 </el-input>
               </el-form-item>
-              <el-form-item label="应用描述">
+              <el-form-item label="Agent描述">
                 <el-input
                   v-model="applicationInfo.description"
                   type="textarea"
-                  placeholder="请输入应用描述"
+                  placeholder="请输入Agent描述"
                   maxlength="256"
                   :rows="4"
                   resize="none"
@@ -171,10 +171,10 @@
                 <ColorAvater v-if="showIconEdit" class="edit-icon" shape="square">
                   <el-icon><Edit /></el-icon>
                 </ColorAvater>
-                <ColorAvater name="应用" pinyinColor shape="square" />
+                <ColorAvater name="Agent" pinyinColor shape="square" />
               </div>
               <h4 style="margin: 0; padding-left: 12px">
-                {{ applicationInfo.name || '应用名称' }}
+                {{ applicationInfo.name || 'Agent名称' }}
               </h4>
             </div>
             <div class="chat-container custom-scrollbar px-24">

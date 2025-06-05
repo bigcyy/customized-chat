@@ -48,7 +48,7 @@
                 <el-tooltip effect="dark" placement="right">
                   <template #content>
                     <p>
-                      大语言模型：在应用中与AI对话的推理模型。<br />向量模型：在知识库中对文档内容进行向量化的模型。
+                      大语言模型：在Agent中与AI对话的推理模型。<br />向量模型：在知识库中对文档内容进行向量化的模型。
                     </p>
                   </template>
                   <el-icon><QuestionFilled /></el-icon>

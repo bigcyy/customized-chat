@@ -1,7 +1,7 @@
 <template>
   <div class="">
     <div class="flex-between">
-      <h4>应用</h4>
+      <h4>Agent</h4>
       <el-input v-model="search" placeholder="请输入内容" style="width: 240px" />
     </div>
     <div class="content-body">
@@ -10,12 +10,12 @@
           <el-card shadow="hover" class="application-card application-start" style="--el-card-padding: 8px">
             <div class="cursor flex align-center application-start-item" @click="openCreateApplication">
               <el-icon class="mr-8"><DocumentAdd /></el-icon>
-              <span class="text-sm">创建应用</span>
+              <span class="text-sm">创建Agent</span>
             </div>
             <div class="divider"></div>
             <div class="cursor flex align-center application-start-item">
               <el-icon class="mr-8 "><Upload /></el-icon>
-              <span class="text-sm">导入应用</span>
+              <span class="text-sm">导入Agent</span>
             </div>
           </el-card>
         </el-col>

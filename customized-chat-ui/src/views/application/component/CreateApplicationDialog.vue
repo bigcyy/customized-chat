@@ -1,6 +1,6 @@
 <template>
   <el-dialog
-    title="创建应用"
+    title="创建Agent"
     v-model="visible"
     width="600px"
     :close-on-click-modal="false"
@@ -10,21 +10,21 @@
     append-to-body
   >
     <el-form :model="applicationForm" label-position="top">
-      <el-form-item label="应用名称" prop="name">
-        <el-input v-model="applicationForm.name" placeholder="请输入应用名称" />
+      <el-form-item label="Agent名称" prop="name">
+        <el-input v-model="applicationForm.name" placeholder="请输入Agent名称" />
       </el-form-item>
-      <el-form-item label="应用描述" prop="description">
-        <el-input v-model="applicationForm.description" placeholder="请输入应用描述" />
+      <el-form-item label="Agent描述" prop="description">
+        <el-input v-model="applicationForm.description" placeholder="请输入Agent描述" />
       </el-form-item>
-      <el-form-item label="应用类型" prop="applicationType">
+      <el-form-item label="Agent类型" prop="applicationType">
         <el-radio-group v-model="applicationForm.applicationType">
-          <el-radio-button value="SIMPLE">简单应用</el-radio-button>
-          <el-radio-button value="COMPLEX">复杂应用</el-radio-button>
+          <el-radio-button value="SIMPLE">简单Agent</el-radio-button>
+          <el-radio-button value="COMPLEX">复杂Agent</el-radio-button>
         </el-radio-group>
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button type="primary" @click="createApplication">创建应用</el-button>
+      <el-button type="primary" @click="createApplication">创建Agent</el-button>
       <el-button @click="close">取消</el-button>
     </template>
   </el-dialog>

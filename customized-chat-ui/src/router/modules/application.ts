@@ -5,7 +5,7 @@ const applicationRouter = {
   name: 'application',
   component: AppLayout,
   meta: {
-    title: '应用',
+    title: 'Agent',
     icon: 'application'
   },
   redirect: '/application/index',
@@ -14,7 +14,7 @@ const applicationRouter = {
       path: '/application/index',
       name: 'application-index',
       meta: {
-        title: '应用',
+        title: 'Agent',
         activeMenu: '/application',
         parentPath: '/application',
         parentName: 'application'
@@ -25,7 +25,7 @@ const applicationRouter = {
       path: '/application/:id/:type',
       name: 'application-detail',
       meta: {
-        title: '应用详情',
+        title: 'Agent详情',
         icon: 'application',
         activeMenu: '/application',
         parentPath: '/application',
@@ -51,7 +51,7 @@ const applicationRouter = {
           path: 'setting',
           name: 'application-setting',
           meta: {
-            title: '应用设置',
+            title: 'Agent设置',
             icon: 'icon-setting',
             iconActive: 'icon-setting1',
             active: 'setting',

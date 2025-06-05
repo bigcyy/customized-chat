@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import { get, post, put, del, postStream } from '@/request'
 import type { ApplicationForm } from '@/api/type/application'
 /**
- * 创建应用
+ * 创建Agent
  */
 const createApplication: (data: ApplicationForm, loading?: Ref<boolean>) => Promise<Result<any>> = (
   data,
@@ -17,7 +17,7 @@ const postChatMessage: (chat_id: string, data: any) => Promise<any> = (chat_id, 
 }
 
 /**
- * 根据应用 id 打开会话
+ * 根据Agent id 打开会话
  * @param 参数
 
  }

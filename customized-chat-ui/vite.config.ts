@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => {
       }),
       Components({
         resolvers: [ElementPlusResolver()]
-      })
+      }),
     ],
     server: {
       cors: true,

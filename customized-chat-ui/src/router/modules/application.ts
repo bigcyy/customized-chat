@@ -35,16 +35,56 @@ const applicationRouter = {
       component: () => import('@/layout/AppDetailLayout.vue'),
       children: [
         {
-          path: '/application/:id/:type/setting',
+          path: 'overview',
+          name: 'AppOverview',
+          meta: {
+            title: '概览',
+            icon: 'icon-all',
+            iconActive: 'icon-all-fill',
+            active: 'overview',
+            parentPath: '/application/:id/:type',
+            parentName: 'application-detail',
+          },
+          component: () => import('@/views/application-overview/index.vue')
+        },
+        {
+          path: 'setting',
           name: 'application-setting',
           meta: {
             title: '应用设置',
-            icon: 'application-setting',
-            activeMenu: '/application/:id/:type',
+            icon: 'icon-setting',
+            iconActive: 'icon-setting1',
+            active: 'setting',
             parentPath: '/application/:id/:type',
-            parentName: 'application-detail'
+            parentName: 'application-detail',
           },
           component: () => import('@/views/application/ApplicationSetting.vue')
+        },
+        {
+          path: 'hit-test',
+          name: 'application-hit-test',
+          meta: {
+            title: '命中测试',
+            icon: 'icon-hit',
+            iconActive: 'icon-hit-fill',
+            active: 'hit-test',
+            parentPath: '/application/:id/:type',
+            parentName: 'application-detail',
+          },
+          component: () => import('@/views/hint-test/index.vue')
+        },
+        {
+          path: 'log',
+          name: 'application-log',
+          meta: {
+            title: '对话日志',
+            icon: 'icon-log',
+            iconActive: 'icon-log-fill',
+            active: 'log',
+            parentPath: '/application/:id/:type',
+            parentName: 'application-detail',
+          },
+          component: () => import('@/views/log/index.vue')
         }
       ]
     }

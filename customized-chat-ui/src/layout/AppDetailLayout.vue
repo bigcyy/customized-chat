@@ -1,10 +1,10 @@
 <template>
   <div class="system-layout w-full">
     <el-container>
-      <el-aside>
+      <el-aside width="200px">
         <AppSideBar />
       </el-aside>
-      <el-main>
+      <el-main >
         <AppMain />
       </el-main>
     </el-container>
@@ -16,4 +16,5 @@ import AppMain from './components/app-main/index.vue'
 import AppSideBar from './components/side-bar/index.vue'
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+</style>

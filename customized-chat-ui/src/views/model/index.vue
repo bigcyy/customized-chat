@@ -9,7 +9,7 @@
         <el-input v-model="search" placeholder="请输入内容" style="width: 240px" />
       </div>
       <el-row :gutter="20" class="model-cards" v-loading="loading">
-        <el-col :span="12" v-for="(item, index) in filterCardData" :key="index">
+        <el-col :span="8" v-for="(item, index) in filterCardData" :key="index">
           <el-card class="model-card">
             <div class="card-header">
               <span

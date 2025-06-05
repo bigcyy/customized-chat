@@ -1,9 +1,9 @@
 <template>
-  <div>
+  <div class="side-bar-item">
     <el-sub-menu v-if="menu.children && menu.children.length > 0">
       <template #title>
         <el-icon>
-          <AppIcon v-if="menu.meta && menu.meta.icon" :iconName="menuIcon" class="sidebar-icon" />
+          <IconFont v-if="menu.meta && menu.meta.icon" :name="menuIcon" class="sidebar-icon" />
         </el-icon>
         <span>{{ menu.meta?.title as string }}</span>
       </template>
@@ -14,10 +14,16 @@
         :activeMenu="activeMenu"
       ></SideBarItem>
     </el-sub-menu>
-    <el-menu-item v-else>
+    <el-menu-item
+      v-else
+      :index="menu.path"
+      @click="handleClick(menu)"
+      class="sidebar-popper"
+      :class="menu.path == activeMenu ? 'sidebar-popper-active' : ''"
+    >
       <template #title>
         <el-icon>
-          <AppIcon v-if="menu.meta && menu.meta?.icon" :iconName="menuIcon" class="sidebar-icon" />
+          <IconFont v-if="menu.meta && menu.meta?.icon" :name="menuIcon" class="sidebar-icon" />
         </el-icon>
         <span>{{ menu.meta?.title as string }}</span>
       </template>
@@ -40,6 +46,19 @@ const menuIcon = computed(() => {
   }
   return props.menu.meta?.icon
 })
+
+const handleClick = (menu: RouteRecordRaw) => {}
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.side-bar-item {
+  height: 45px;
+}
+.sidebar-popper {
+  height: 45px;
+  border-radius: 6px;
+}
+.sidebar-popper-active {
+  background-color: #ecf5ff;
+}
+</style>

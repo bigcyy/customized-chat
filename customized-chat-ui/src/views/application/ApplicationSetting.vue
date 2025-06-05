@@ -39,7 +39,7 @@
                   :input-style="{ backgroundColor: '#fff' }"
                 >
                   <template #append>
-                    <span class="word-limit">{{ applicationInfo.description.length }}/256</span>
+                    <span class="word-limit">{{ applicationInfo.description?.length }}/256</span>
                   </template>
                 </el-input>
               </el-form-item>
@@ -52,18 +52,19 @@
                 </template>
                 <div class="model-select">
                   <el-select
-                    v-model="applicationInfo.aiModel"
+                    v-model="applicationInfo.modelId"
                     placeholder="请选择 AI 模型"
                     class="full-width"
                   >
-                    <el-option label="模型1" value="model1" />
-                    <el-option label="模型2" value="model2" />
+                    <el-option label="模型1" value="1" />
+                    <el-option label="模型2" value="2" />
+                    <el-option label="模型6" value="6" />
                   </el-select>
                 </div>
               </el-form-item>
               <el-form-item label="角色设定">
                 <el-input
-                  v-model="applicationInfo.rolePrompt"
+                  v-model="applicationInfo.prologue"
                   type="textarea"
                   placeholder="你是 xxx 小助手"
                   :rows="4"
@@ -71,17 +72,17 @@
                   :input-style="{ backgroundColor: '#fff' }"
                 />
               </el-form-item>
-              <el-form-item label="历史聊天记录">
+              <!-- <el-form-item label="历史聊天记录">
                 <el-input-number
                   v-model="applicationInfo.historyCount"
                   placeholder="请输入历史聊天记录"
                   controls-position="right"
                   class="full-width"
                 />
-              </el-form-item>
+              </el-form-item> -->
               <el-form-item class="mb-0" label="开场白">
                 <el-input
-                  v-model="applicationInfo.greeting"
+                  v-model="applicationInfo.prologue"
                   type="textarea"
                   placeholder="您好，我是 xxx 小助手，您可以向我提出 xxx 使用问题。"
                   resize="none"
@@ -113,7 +114,7 @@
               </h4>
             </div>
             <div class="chat-container custom-scrollbar px-24">
-              <AiChat :application="applicationInfo" />
+              <AiChat :application="applicationInfo" :type="'debug'" />
             </div>
           </div>
         </el-col>
@@ -124,21 +125,19 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-
+import type { ApplicationForm } from '@/api/type/application'
 const showIconEdit = ref(false)
 
-const applicationInfo = ref({
+const applicationInfo = ref<ApplicationForm>({
   name: '',
   description: '',
-  aiModel: '',
-  rolePrompt: '',
-  prompt: '{question}',
-  historyCount: 1,
-  promptWithKnowledge: `已知信息：{data}\n用户问题：{question}\n回答要求：\n - 请使用中文回答用户问题`,
-  greeting: `您好，我是 XXX 小助手，您可以向我提出 XXX 使用问题。\n- XXX 主要功能有什么？\n- XXX 如何收费？\n- 需要转人工服务`,
-  outputThinking: false,
-  voiceInput: false,
-  voiceBroadcast: false
+  prologue: `您好，我是 XXX 小助手，您可以向我提出 XXX 使用问题。\n- XXX 主要功能有什么？\n- XXX 如何收费？\n- 需要转人工服务`,
+  workflow: '',
+  icon: '',
+  applicationType: '',
+  modelId: undefined,
+  modelSetting: '',
+  datasetSetting: ''
 })
 
 </script>

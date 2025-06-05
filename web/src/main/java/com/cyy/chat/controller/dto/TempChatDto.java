@@ -1,6 +1,5 @@
 package com.cyy.chat.controller.dto;
 
-import com.cyy.chat.model.Application;
 import com.cyy.chat.model.ChatMessage;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,7 +17,7 @@ public class TempChatDto {
     /**
      * 应用信息
      */
-    private Application application;
+    private ApplicationDto application;
 
     /**
      * 聊天请求信息

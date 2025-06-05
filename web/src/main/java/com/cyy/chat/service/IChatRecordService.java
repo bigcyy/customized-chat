@@ -1,5 +1,6 @@
 package com.cyy.chat.service;
 
+import com.cyy.chat.controller.dto.ApplicationDto;
 import com.cyy.chat.model.*;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.springframework.ai.chat.messages.Message;
@@ -21,7 +22,7 @@ import java.util.List;
 public interface IChatRecordService extends IService<ChatRecord> {
 
     Flux<String> chat(Application application, ChatSession chatSession, ChatMessage userMessage);
-    Flux<String> tempChat(Application application, ChatSession chatSession, ChatMessage userMessage,List<ChatMessage> chatHistories);
+    Flux<String> tempChat(ApplicationDto application, ChatSession chatSession, ChatMessage userMessage, List<ChatMessage> chatHistories);
     List<Message> buildMessageList(Application application, ChatSession chatSession, ChatRecord chatRecord, Model model);
 
     ModelSetting getModelSetting(Application application, Model model);

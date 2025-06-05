@@ -38,7 +38,7 @@ public class DBMemory implements ChatMemory {
             // todo token花销
             Message messagesLast = messageList.get(messageList.size() - 1);
             ChatMessage chatMessage;
-            if(MessageType.USER == MessageType.valueOf(lastMessage.getRole())){
+            if(MessageType.USER == MessageType.fromValue(lastMessage.getRole())){
                 chatMessage = ChatMessage.builder()
                         .messageText(messagesLast.getText())
                         .messageIndex(lastMessage.getMessageIndex() + 1)
@@ -75,7 +75,7 @@ public class DBMemory implements ChatMemory {
         // 转换为Message对象列表
         return chatMessages.stream()
                 .map(msg -> {
-                    if(MessageType.USER == MessageType.valueOf(msg.getRole())){
+                    if(MessageType.USER == MessageType.fromValue(msg.getRole())){
                         return new UserMessage(msg.getMessageText());
                     }else{
                         return new AssistantMessage(msg.getMessageText());

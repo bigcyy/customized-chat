@@ -5,9 +5,10 @@ interface ApplicationForm {
   prologue?: string
   workflow?: string
   icon?: string
+  applicationType?: string
   modelId?: number
   modelSetting?: string
-  dataset_setting?: string
+  datasetSetting?: string
 }
 
 interface chatType {
@@ -36,4 +37,27 @@ interface chatType {
   execution_details?: any[]
 }
 
-export type { ApplicationForm, chatType }
+interface ChatMessage {
+  id?: Number,
+  sessionId: Number | undefined,
+  messageIndex: Number,
+  messageText: string,
+  messageToken?: Number,
+  updateTime?: Number,
+  createTime?: Number,
+  loading?: Boolean,
+  isError?: Boolean,
+  role: 'user' | 'assistant'
+}
+
+/**
+ * 临时聊天DTO
+ */
+interface TempChatDto {
+  application: ApplicationForm
+  chatMessage: ChatMessage
+  chatHistories?: ChatMessage[]
+}
+
+
+export type { ApplicationForm, chatType, ChatMessage, TempChatDto }

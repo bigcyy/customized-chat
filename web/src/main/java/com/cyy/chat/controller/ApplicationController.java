@@ -23,6 +23,7 @@ import org.springframework.stereotype.Controller;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -103,10 +104,11 @@ public class ApplicationController {
     }
 
     @PostMapping(value = "/temp/chat/session/{sessionId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> tempChat(@PathVariable Long sessionId, @RequestBody TempChatDto tempChatDto){
+    public Flux<Map<String,String>> tempChat(@PathVariable Long sessionId, @RequestBody TempChatDto tempChatDto){
         // todo: 通过 sessionId 去获取对话
         ChatSession session = ChatSession.builder().id(sessionId).build();
-        return chatRecordService.tempChat(tempChatDto.getApplication(),session,tempChatDto.getChatMessage(),tempChatDto.getChatHistories());
+        return chatRecordService.tempChat(tempChatDto.getApplication(),session,tempChatDto.getChatMessage(),tempChatDto.getChatHistories())
+                .map(message -> Map.of("message", message));
     }
 
     @PostMapping(value = "/{applicationId}/chat/session/{sessionId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

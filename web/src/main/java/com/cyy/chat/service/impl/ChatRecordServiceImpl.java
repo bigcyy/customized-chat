@@ -2,6 +2,7 @@ package com.cyy.chat.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.cyy.chat.advisor.DBMemory;
+import com.cyy.chat.controller.dto.ApplicationDto;
 import com.cyy.chat.dao.ChatMessageMapper;
 import com.cyy.chat.model.*;
 import com.cyy.chat.dao.ChatRecordMapper;
@@ -81,7 +82,7 @@ public class ChatRecordServiceImpl extends ServiceImpl<ChatRecordMapper, ChatRec
     }
 
     @Override
-    public Flux<String> tempChat(Application application, ChatSession chatSession, ChatMessage userMessage, List<ChatMessage> chatHistories) {
+    public Flux<String> tempChat(ApplicationDto application, ChatSession chatSession, ChatMessage userMessage, List<ChatMessage> chatHistories) {
 
         // 获取应用对应的模型信息
         ChatModel chatModel = buildChatModel(application.getModelId());
@@ -219,9 +220,9 @@ public class ChatRecordServiceImpl extends ServiceImpl<ChatRecordMapper, ChatRec
         if(message.getRole() == null){
             throw new SystemGlobalException("消息角色为空");
         }
-        if(MessageType.USER == MessageType.valueOf(message.getRole())){
+        if(MessageType.USER == MessageType.fromValue(message.getRole())){
             return new UserMessage(message.getMessageText());
-        }else if(MessageType.ASSISTANT == MessageType.valueOf(message.getRole())){
+        }else if(MessageType.ASSISTANT == MessageType.fromValue(message.getRole())){
             return new AssistantMessage(message.getMessageText());
         }else {
             throw new SystemGlobalException("消息类型错误");

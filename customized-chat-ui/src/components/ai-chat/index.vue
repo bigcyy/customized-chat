@@ -4,20 +4,20 @@
     <div class="chat-messages" ref="messagesContainer">
       
       <!-- 开场白 -->
-      <div v-if="application.greeting && chatMessages.length === 0" class="greeting-message">
+      <div v-if="application.prologue && chatMessages.length === 0" class="greeting-message">
         <UserAvater name="icon-robot" class="ai-avatar" />
         <div class="message-content">
-          <MdRenderer :source="application.greeting" />
+          <MdRenderer :source="application.prologue" />
         </div>
       </div>
 
       <!-- 聊天消息列表 -->
-      <div v-for="message in chatMessages" :key="message.id" class="message-item">
+      <div v-for="(message, index) in chatMessages" :key="index" class="message-item">
 
         <!-- 用户消息 -->
-        <div v-if="message.type === 'user'" class="user-message">
+        <div v-if="message.role === 'user'" class="user-message">
           <div class="message-content">
-            <p>{{ message.content }}</p>
+            <p>{{ message.messageText }}</p>
           </div>
           <UserAvater class="user-avatar" />
         </div>
@@ -27,8 +27,8 @@
           <UserAvater name="icon-robot" class="ai-avatar" />
           <div class="message-content">
             <MdRenderer 
-              v-if="message.content"
-              :source="message.content"
+              v-if="message.messageText"
+              :source="message.messageText"
             />
             <div v-if="message.loading" class="loading-indicator">
               <el-icon class="is-loading">
@@ -71,22 +71,19 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, ref, nextTick, defineEmits } from 'vue'
+import { defineProps, ref, nextTick, defineEmits, reactive } from 'vue'
 import { Loading, Right } from '@element-plus/icons-vue'
 import UserAvater from '@/components/avaters/user-avater.vue'
 import MdRenderer from '@/components/markdown/MdRenderer.vue'
+import applicationApi from '@/api/application'
+import type { ApplicationForm, ChatMessage } from '@/api/type/application'
 
-interface ChatMessage {
-  id: string
-  type: 'user' | 'ai'
-  content: string
-  timestamp: number
-  loading?: boolean
-}
-
-const props = defineProps<{
-  application: any
-}>()
+const props = withDefaults(defineProps<{
+  application: ApplicationForm,
+  type: 'debug' | 'normal'
+}>(), {
+  type: 'normal'
+})
 
 const emit = defineEmits<{
   sendMessage: [message: string]
@@ -97,6 +94,7 @@ const inputMessage = ref('')
 const chatMessages = ref<ChatMessage[]>([])
 const isLoading = ref(false)
 const messagesContainer = ref<HTMLElement>()
+const sessionId = ref<number | undefined>(undefined)
 
 // 滚动到底部
 const scrollToBottom = () => {
@@ -112,32 +110,33 @@ const generateMessageId = () => {
   return Date.now().toString() + Math.random().toString(36).substr(2, 9)
 }
 
-// 处理提示问题选择
-const handleTipSelect = (tip: string) => {
-  sendMessage(tip)
-}
-
 // 发送消息
-const sendMessage = (message: string) => {
+const sendMessage = async (message: string) => {
   if (!message.trim() || isLoading.value) return
-  
+  // 判断是否打开会话
+  if (!sessionId.value) {
+    await openChat()
+  }
+  if(!sessionId.value){
+    return
+  }
   // 添加用户消息
   const userMessage: ChatMessage = {
-    id: generateMessageId(),
-    type: 'user',
-    content: message.trim(),
-    timestamp: Date.now()
+    sessionId: sessionId.value,
+    messageIndex: chatMessages.value.length,
+    role: 'user',
+    messageText: message.trim(),
   }
   chatMessages.value.push(userMessage)
   
   // 添加AI加载状态
-  const aiMessage: ChatMessage = {
-    id: generateMessageId(),
-    type: 'ai',
-    content: '',
-    timestamp: Date.now(),
+  const aiMessage: ChatMessage = reactive({
+    sessionId: sessionId.value,
+    messageIndex: chatMessages.value.length,
+    role: 'assistant',
+    messageText: '',
     loading: true
-  }
+  })
   chatMessages.value.push(aiMessage)
   
   isLoading.value = true
@@ -145,14 +144,26 @@ const sendMessage = (message: string) => {
   
   // 触发父组件事件
   emit('sendMessage', message.trim())
-  
-  // 模拟AI回复 (实际项目中这里应该调用API)
-  setTimeout(() => {
-    aiMessage.loading = false
-    aiMessage.content = generateMockResponse(message)
-    isLoading.value = false
-    scrollToBottom()
-  }, 2000)
+
+  // 发送消息
+  applicationApi.postTempChatMessageStream(sessionId.value, {
+    application: props.application,
+    chatMessage: userMessage,
+    chatHistories: chatMessages.value.filter(item => !item.isError)
+    },
+     (data) => { 
+      aiMessage.loading = false
+      console.log(data)
+      aiMessage.messageText = aiMessage.messageText + data
+      scrollToBottom()
+    },
+     (err) => { 
+      console.log(err)
+      writeErrMessage(err, chatMessages.value[chatMessages.value.length - 1])
+     }, () => { 
+      console.log('完成')
+      isLoading.value = false
+    })
 }
 
 // 处理发送按钮点击
@@ -163,48 +174,12 @@ const handleSend = () => {
   }
 }
 
-// 模拟AI回复 (仅用于演示)
-const generateMockResponse = (userMessage: string): string => {
-  const responses = [
-    `您好！关于"**${userMessage}**"这个问题，我来为您详细解答。
-
-这是一个很好的问题。根据我的理解，我可以从以下几个方面来回答：
-
-1. **基本概念**：首先需要了解相关的基础知识
-2. **具体操作**：然后是具体的操作步骤  
-3. **注意事项**：最后是一些需要注意的地方
-
-希望这个回答对您有帮助！如果您还有其他问题，请随时告诉我。`,
-    
-    `感谢您的提问！针对"**${userMessage}**"，我建议您可以：
-
-- 查看相关文档
-- 参考最佳实践
-- 进行实际测试
-
-如果您需要更多帮助，请告诉我具体的使用场景。`,
-    
-    `关于"**${userMessage}**"的问题，这确实是一个常见的需求。
-
-\`\`\`javascript
-// 示例代码
-function example() {
-  console.log('这是一个示例');
-}
-\`\`\`
-
-如果您需要更多帮助，请告诉我具体的使用场景。`
-  ]
-  
-  return responses[Math.floor(Math.random() * responses.length)]
-}
-
 // 暴露方法给父组件
 const addAIResponse = (content: string) => {
   const lastMessage = chatMessages.value[chatMessages.value.length - 1]
-  if (lastMessage && lastMessage.type === 'ai' && lastMessage.loading) {
+  if (lastMessage && lastMessage.role === 'assistant' && lastMessage.loading) {
     lastMessage.loading = false
-    lastMessage.content = content
+    lastMessage.messageText = content
     isLoading.value = false
     scrollToBottom()
   }
@@ -212,6 +187,49 @@ const addAIResponse = (content: string) => {
 
 const setLoading = (loading: boolean) => {
   isLoading.value = loading
+}
+
+/**
+ * 打开会话，如果错误会以 ai 身份发送错误信息，并返回 undefined
+ */
+const openChat = async () : Promise<number|undefined> => {
+  try{
+    if(props.type === 'debug'){
+      const res = await applicationApi.openTempChat()
+      sessionId.value = res.data.sessionId
+      return res.data.sessionId
+    }else{
+      const res = await applicationApi.openTempChat()
+      sessionId.value = res.data.sessionId
+      return res.data.sessionId
+    }
+  }catch(err){
+    console.log(err)
+    writeErrMessage(err)
+    return undefined
+  }
+}
+
+const writeErrMessage = (err: any, updateMessage?: ChatMessage ) => {
+  if(updateMessage && updateMessage.role === 'assistant' && updateMessage.loading){
+    updateMessage.loading = false
+    updateMessage.messageText = err.message
+    updateMessage.isError = true
+    isLoading.value = false
+    scrollToBottom()
+    return
+  }
+  const errMessage: ChatMessage = {
+    sessionId: undefined,
+    messageIndex: chatMessages.value.length,
+    role: 'assistant',
+    messageText: err.message,
+    loading: false,
+    isError: true
+  }
+  chatMessages.value.push(errMessage)
+  isLoading.value = false
+  scrollToBottom()
 }
 
 // 暴露给父组件使用

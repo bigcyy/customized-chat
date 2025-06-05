@@ -5,8 +5,10 @@ import type { Ref } from 'vue'
 import { ref, type WritableComputedRef } from 'vue'
 import Result from './Result'
 
+const axiosApiPrefix = '/api/api/v1'
+
 const axiosConfig = {
-  baseURL: '/api/api/v1',
+  baseURL: axiosApiPrefix,
   withCredentials: false,
   timeout: 600000,
   headers: {}
@@ -148,20 +150,97 @@ export const del: (
 }
 
 /**
- * 流处理
- * @param url  url地址
+ * SSE流处理 - 处理Server-Sent Events
+ * @param url url地址
  * @param data 请求body
- * @returns
+ * @param onMessage 接收到消息时的回调
+ * @param onError 错误回调
+ * @param onComplete 完成回调
+ * @returns 控制对象，包含abort方法用于取消请求
  */
-export const postStream: (url: string, data?: unknown) => Promise<Result<any> | any> = (
-  url,
-  data
-) => {
-  const headers: HeadersInit = { 'Content-Type': 'application/json' }
+export const postSSEStream = (
+  url: string,
+  data?: unknown,
+  onMessage?: (data: string) => void,
+  onError?: (error: any) => void,
+  onComplete?: () => void
+): {
+  abort: () => void,
+  promise: Promise<any>
+} => {
+  const headers: HeadersInit = { 
+    'Content-Type': 'application/json',
+    'Accept': 'text/event-stream',
+    'Cache-Control': 'no-cache'
+  }
 
-  return fetch(url, {
+  const controller = new AbortController()
+  
+  const fetchPromise = fetch(`${axiosApiPrefix}${url}`, {
     method: 'POST',
     body: data ? JSON.stringify(data) : undefined,
-    headers: headers
+    headers: headers,
+    signal: controller.signal
   })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const reader = response.body?.getReader()
+    const decoder = new TextDecoder()
+    
+    if (!reader) {
+      throw new Error('Unable to get response reader')
+    }
+    
+    let tempResult = ''
+    const readStream = () => {
+      reader.read().then(({ done, value }) => {
+        if (done) {
+          onComplete?.()
+          return
+        }
+        
+        // 解码数据
+        let chunk = decoder.decode(value, { stream: true })
+        console.log("readStream chunk", chunk)
+        tempResult = tempResult + chunk
+        let split = tempResult.match(/data:.*}\n\n/g)
+        if(split){
+          chunk = split.join('')
+          tempResult = tempResult.replace(chunk, '')
+        }else{
+          readStream()
+        }
+
+        if(chunk && chunk.startsWith('data:')){
+          if(split){
+            for (const index in split) {
+              const jsonChunk = JSON?.parse(split[index].replace('data:', ''))
+              onMessage?.(jsonChunk.message)
+            }
+          }
+        }
+        // 继续读取
+        readStream()
+      }).catch(error => {
+        if (error.name !== 'AbortError') {
+          onError?.(error)
+        }
+      })
+    }
+    
+    readStream()
+  })
+  .catch(error => {
+    if (error.name !== 'AbortError') {
+      onError?.(error)
+    }
+  })
+  
+  return {
+    abort: () => controller.abort(),
+    promise: fetchPromise
+  }
 }

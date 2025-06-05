@@ -1,49 +1,22 @@
 <template>
-  <template v-for="(item, index) in md_view_list" :key="index">
-    <div
-      v-if="item.type === 'question'"
-      @click="sendMessage ? sendMessage(item.content, 'new') : (content: string) => {}"
-      class="problem-button ellipsis-2 mt-4 mb-4"
-      :class="sendMessage ? 'cursor' : 'disabled'"
-    >
-      <el-icon>
-        <EditPen />
-      </el-icon>
-      {{ item.content }}
-    </div>
-    <HtmlRander v-else-if="item.type === 'html_rander'" :source="item.content"></HtmlRander>
-    <EchartsRander
-      v-else-if="item.type === 'echarts_rander'"
-      :option="item.content"
-    ></EchartsRander>
-    <FormRander
-      :chat_record_id="chat_record_id"
-      :runtime_node_id="runtime_node_id"
-      :child_node="child_node"
-      :disabled="disabled"
-      :send-message="sendMessage"
-      v-else-if="item.type === 'form_rander'"
-      :form_setting="item.content"
-    ></FormRander>
-    <MdPreview
-      v-else
-      noIconfont
-      ref="editorRef"
-      editorId="preview-only"
-      :modelValue="item.content"
-      :key="index"
-      class="maxkb-md"
-    />
-  </template>
+  <MdPreview 
+    noIconfont 
+    noPrettier 
+    :codeFoldable="false" 
+    :modelValue="source"
+    editorId="preview-only"
+    class="custom-markdown"
+  />
 </template>
+
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import { config } from 'md-editor-v3'
-import HtmlRander from './HtmlRander.vue'
-import EchartsRander from './EchartsRander.vue'
-import FormRander from './FormRander.vue'
+import { MdPreview } from 'md-editor-v3'
+
+// 配置markdown渲染规则
 config({
   markdownItConfig(md) {
+    // 图片渲染规则
     md.renderer.rules.image = (tokens, idx, options, env, self) => {
       tokens[idx].attrSet('style', 'display:inline-block;min-height:33px;padding:0;margin:0')
       if (tokens[idx].content) {
@@ -55,200 +28,125 @@ config({
       )
       return md.renderer.renderToken(tokens, idx, options)
     }
+    // 链接渲染规则 - 新窗口打开
     md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
       tokens[idx].attrSet('target', '_blank')
       return md.renderer.renderToken(tokens, idx, options)
     }
-    document.appendChild
   }
 })
-const props = withDefaults(
+
+withDefaults(
   defineProps<{
     source?: string
-    inner_suffix?: boolean
-    sendMessage?: (question: string, type: 'old' | 'new', other_params_data?: any) => void
-    child_node?: any
-    chat_record_id?: string
-    runtime_node_id?: string
-    disabled?: boolean
   }>(),
   {
-    source: '',
-    disabled: false
+    source: ''
   }
 )
-const editorRef = ref()
-const md_view_list = computed(() => {
-  const temp_source = props.source
-  return split_form_rander(
-    split_echarts_rander(split_html_rander(split_quick_question([temp_source])))
-  )
-})
-
-const split_quick_question = (result: Array<string>) => {
-  return result
-    .map((item) => split_quick_question_(item))
-    .reduce((x: any, y: any) => {
-      return [...x, ...y]
-    }, [])
-}
-const split_quick_question_ = (source: string) => {
-  const temp_md_quick_question_list = source.match(/<quick_question>[\d\D]*?<\/quick_question>/g)
-  const md_quick_question_list = temp_md_quick_question_list
-    ? temp_md_quick_question_list.filter((i) => i)
-    : []
-  const split_quick_question_value = source
-    .split(/<quick_question>[\d\D]*?<\/quick_question>/g)
-    .filter((item) => item !== undefined)
-    .filter((item) => !md_quick_question_list?.includes(item))
-  const result = Array.from(
-    { length: md_quick_question_list.length + split_quick_question_value.length },
-    (v, i) => i
-  ).map((index) => {
-    if (index % 2 == 0) {
-      return { type: 'md', content: split_quick_question_value[Math.floor(index / 2)] }
-    } else {
-      return {
-        type: 'question',
-        content: md_quick_question_list[Math.floor(index / 2)]
-          .replace('<quick_question>', '')
-          .replace('</quick_question>', '')
-      }
-    }
-  })
-  return result
-}
-const split_html_rander = (result: Array<any>) => {
-  return result
-    .map((item) => split_html_rander_(item.content, item.type))
-    .reduce((x: any, y: any) => {
-      return [...x, ...y]
-    }, [])
-}
-
-const split_html_rander_ = (source: string, type: string) => {
-  const temp_md_quick_question_list = source.match(/<html_rander>[\d\D]*?<\/html_rander>/g)
-  const md_quick_question_list = temp_md_quick_question_list
-    ? temp_md_quick_question_list.filter((i) => i)
-    : []
-  const split_quick_question_value = source
-    .split(/<html_rander>[\d\D]*?<\/html_rander>/g)
-    .filter((item) => item !== undefined)
-    .filter((item) => !md_quick_question_list?.includes(item))
-  const result = Array.from(
-    { length: md_quick_question_list.length + split_quick_question_value.length },
-    (v, i) => i
-  ).map((index) => {
-    if (index % 2 == 0) {
-      return { type: type, content: split_quick_question_value[Math.floor(index / 2)] }
-    } else {
-      return {
-        type: 'html_rander',
-        content: md_quick_question_list[Math.floor(index / 2)]
-          .replace('<html_rander>', '')
-          .replace('</html_rander>', '')
-      }
-    }
-  })
-  return result
-}
-
-const split_echarts_rander = (result: Array<any>) => {
-  return result
-    .map((item) => split_echarts_rander_(item.content, item.type))
-    .reduce((x: any, y: any) => {
-      return [...x, ...y]
-    }, [])
-}
-
-const split_echarts_rander_ = (source: string, type: string) => {
-  const temp_md_quick_question_list = source.match(/<echarts_rander>[\d\D]*?<\/echarts_rander>/g)
-  const md_quick_question_list = temp_md_quick_question_list
-    ? temp_md_quick_question_list.filter((i) => i)
-    : []
-  const split_quick_question_value = source
-    .split(/<echarts_rander>[\d\D]*?<\/echarts_rander>/g)
-    .filter((item) => item !== undefined)
-    .filter((item) => !md_quick_question_list?.includes(item))
-  const result = Array.from(
-    { length: md_quick_question_list.length + split_quick_question_value.length },
-    (v, i) => i
-  ).map((index) => {
-    if (index % 2 == 0) {
-      return { type: type, content: split_quick_question_value[Math.floor(index / 2)] }
-    } else {
-      return {
-        type: 'echarts_rander',
-        content: md_quick_question_list[Math.floor(index / 2)]
-          .replace('<echarts_rander>', '')
-          .replace('</echarts_rander>', '')
-      }
-    }
-  })
-  return result
-}
-
-const split_form_rander = (result: Array<any>) => {
-  return result
-    .map((item) => split_form_rander_(item.content, item.type))
-    .reduce((x: any, y: any) => {
-      return [...x, ...y]
-    }, [])
-}
-
-const split_form_rander_ = (source: string, type: string) => {
-  const temp_md_quick_question_list = source.match(/<form_rander>[\d\D]*?<\/form_rander>/g)
-  const md_quick_question_list = temp_md_quick_question_list
-    ? temp_md_quick_question_list.filter((i) => i)
-    : []
-  const split_quick_question_value = source
-    .split(/<form_rander>[\d\D]*?<\/form_rander>/g)
-    .filter((item) => item !== undefined)
-    .filter((item) => !md_quick_question_list?.includes(item))
-  const result = Array.from(
-    { length: md_quick_question_list.length + split_quick_question_value.length },
-    (v, i) => i
-  ).map((index) => {
-    if (index % 2 == 0) {
-      return { type: type, content: split_quick_question_value[Math.floor(index / 2)] }
-    } else {
-      return {
-        type: 'form_rander',
-        content: md_quick_question_list[Math.floor(index / 2)]
-          .replace('<form_rander>', '')
-          .replace('</form_rander>', '')
-      }
-    }
-  })
-  return result
-}
 </script>
-<style lang="scss" scoped>
-.problem-button {
-  width: 100%;
-  border: none;
-  border-radius: 8px;
-  background: var(--app-layout-bg-color);
-  height: 46px;
-  padding: 0 12px;
-  line-height: 46px;
-  box-sizing: border-box;
-  color: var(--el-text-color-regular);
-  -webkit-line-clamp: 1;
-  word-break: break-all;
 
-  &:hover {
-    background: var(--el-color-primary-light-9);
-  }
-
-  &.disabled {
-    &:hover {
-      background: var(--app-layout-bg-color);
+<style lang="scss">
+// 全局markdown样式，不使用scoped
+.custom-markdown {
+  .md-editor-preview {
+    padding: 0 !important;
+    background: transparent !important;
+    
+    // 段落
+    p {
+      margin: 0 0 8px 0 !important;
+      line-height: 1.6 !important;
+      
+      &:last-child {
+        margin-bottom: 0 !important;
+      }
     }
-  }
-
-  :deep(.el-icon) {
-    color: var(--el-color-primary);
+    
+    // 列表
+    ul, ol {
+      margin: 8px 0 !important;
+      padding-left: 20px !important;
+      
+      li {
+        margin: 4px 0 !important;
+        line-height: 1.5 !important;
+      }
+    }
+    
+    // 标题
+    h1, h2, h3, h4, h5, h6 {
+      margin: 12px 0 8px 0 !important;
+      
+      &:first-child {
+        margin-top: 0 !important;
+      }
+    }
+    
+    // 代码块
+    pre {
+      margin: 8px 0 !important;
+      border-radius: 4px !important;
+      
+      code {
+        font-size: 14px !important;
+      }
+    }
+    
+    // 行内代码
+    p code, li code {
+      padding: 2px 4px !important;
+      border-radius: 3px !important;
+      font-size: 0.9em !important;
+    }
+    
+    // 引用
+    blockquote {
+      margin: 8px 0 !important;
+      padding: 8px 12px !important;
+      border-radius: 4px !important;
+      
+      p {
+        margin: 0 !important;
+      }
+    }
+    
+    // 表格
+    table {
+      margin: 8px 0 !important;
+      
+      th, td {
+        padding: 8px 12px !important;
+      }
+    }
+    
+    // 强调
+    strong {
+      font-weight: 600 !important;
+    }
+    
+    // 链接
+    a {
+      text-decoration: none !important;
+      
+      &:hover {
+        text-decoration: underline !important;
+      }
+    }
+    
+    // 分隔线
+    hr {
+      margin: 16px 0 !important;
+    }
+    
+    // 清除默认的外边距
+    > *:first-child {
+      margin-top: 0 !important;
+    }
+    
+    > *:last-child {
+      margin-bottom: 0 !important;
+    }
   }
 }
 </style>

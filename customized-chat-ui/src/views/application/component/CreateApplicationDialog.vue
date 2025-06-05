@@ -18,8 +18,10 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button type="primary" @click="createApplication">创建Agent</el-button>
-      <el-button @click="close">取消</el-button>
+      <el-button type="primary" @click="createApplication" :loading="isCreating" :disabled="isCreating">
+        {{ isCreating ? '创建中...' : '创建Agent' }}
+      </el-button>
+      <el-button @click="close" :disabled="isCreating">取消</el-button>
     </template>
   </el-dialog>
 </template>
@@ -33,11 +35,11 @@ import { useRouter } from 'vue-router'
 
 const visible = ref(false)
 const router = useRouter()
+const isCreating = ref(false)
 
 const applicationForm = ref<ApplicationForm>({
   name: '',
-  description: '',
-  applicationType: 'SIMPLE'
+  description: ''
 })
 
 const open = () => {
@@ -45,22 +47,32 @@ const open = () => {
 }
 
 const createApplication = () => {
-  applicationApi.createApplication(applicationForm.value).then((res) => {
-    close()
-    MsgSuccess('创建成功')
-    router.push({
-      path: `/application/${res.data.id}/${applicationForm.value.applicationType}/setting`
+  if (isCreating.value) return
+  
+  isCreating.value = true
+  applicationApi.createApplication(applicationForm.value)
+    .then((res) => {
+      close()
+      MsgSuccess('创建成功')
+      router.push({
+        path: `/application/${res.data.id}/setting`
+      })
     })
-  })
+    .catch((error) => {
+      console.error('创建失败:', error)
+    })
+    .finally(() => {
+      isCreating.value = false
+    })
 }
 
 const close = () => {
   applicationForm.value = {
     name: '',
     description: '',
-    applicationType: 'SIMPLE'
   }
   visible.value = false
+  isCreating.value = false
 }
 
 defineExpose({

@@ -5,7 +5,6 @@ interface ApplicationForm {
   prologue?: string
   workflow?: string
   icon?: string
-  applicationType: string
   modelId?: number
   modelSetting?: string
   dataset_setting?: string

@@ -5,28 +5,16 @@
       <div><el-button type="primary">保存并发布</el-button></div>
     </div>
     <div class="content-body">
-      <el-row style="height: 100%">
-        <el-col
-          :span="10"
-          style="
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            overflow-y: scroll;
-            /* margin-right: 2px; */
-            box-sizing: border-box;
-          "
-          class="custom-scrollbar"
-        >
-          <div class="mb-16" style="padding-left: 16px">
-            <h4 class="title-decoration-1" style="margin: 0">Agent信息</h4>
+      <el-row class="full-height">
+        <el-col :span="10" class="left-column custom-scrollbar">
+          <div class="section-header">
+            <h4 class="section-title">Agent信息</h4>
           </div>
-          <div style="flex: 1; display: flex; flex-direction: column">
+          <div class="form-wrapper">
             <el-form
               :model="applicationInfo"
               label-position="top"
-              class="p-16"
-              style="padding-top: 0"
+              class="form-container"
             >
               <el-form-item label="Agent名称" required>
                 <el-input
@@ -66,7 +54,7 @@
                   <el-select
                     v-model="applicationInfo.aiModel"
                     placeholder="请选择 AI 模型"
-                    style="width: 100%"
+                    class="full-width"
                   >
                     <el-option label="模型1" value="model1" />
                     <el-option label="模型2" value="model2" />
@@ -83,48 +71,12 @@
                   :input-style="{ backgroundColor: '#fff' }"
                 />
               </el-form-item>
-              <el-form-item class="mb-0">
-                <template #label>
-                  <div class="hint-label">
-                    <span>提示词（无引用知识库）</span>
-                    <el-tooltip content="这是一个提示" placement="top">
-                      <el-icon><QuestionFilled /></el-icon>
-                    </el-tooltip>
-                  </div>
-                </template>
-                <el-input
-                  v-model="applicationInfo.prompt"
-                  type="textarea"
-                  placeholder="{question}"
-                  :rows="4"
-                  resize="none"
-                  :input-style="{ backgroundColor: '#fff' }"
-                />
-              </el-form-item>
               <el-form-item label="历史聊天记录">
                 <el-input-number
                   v-model="applicationInfo.historyCount"
                   placeholder="请输入历史聊天记录"
                   controls-position="right"
-                  style="width: 100%"
-                />
-              </el-form-item>
-              <el-form-item class="mb-0">
-                <template #label>
-                  <div class="hint-label">
-                    <span>提示词（引用知识库）</span>
-                    <el-tooltip content="这是一个提示" placement="top">
-                      <el-icon><QuestionFilled /></el-icon>
-                    </el-tooltip>
-                  </div>
-                </template>
-                <el-input
-                  v-model="applicationInfo.promptWithKnowledge"
-                  type="textarea"
-                  placeholder="{question}"
-                  :rows="4"
-                  resize="none"
-                  :input-style="{ backgroundColor: '#fff' }"
+                  class="full-width"
                 />
               </el-form-item>
               <el-form-item class="mb-0" label="开场白">
@@ -137,29 +89,12 @@
                   :rows="4"
                 />
               </el-form-item>
-
-              <div class="switch-row">
-                <div class="switch-item">
-                  <span class="switch-label">输出思考</span>
-                  <el-switch v-model="applicationInfo.outputThinking" />
-                </div>
-
-                <div class="switch-item">
-                  <span class="switch-label">语音输入</span>
-                  <el-switch v-model="applicationInfo.voiceInput" />
-                </div>
-
-                <div class="switch-item">
-                  <span class="switch-label">语音播放</span>
-                  <el-switch v-model="applicationInfo.voiceBroadcast" />
-                </div>
-              </div>
             </el-form>
           </div>
         </el-col>
-        <el-col :span="14" style="border-left: 1px solid #e5e7eb">
-          <div class="mb-16" style="padding-left: 16px">
-            <h4 class="title-decoration-1" style="margin: 0">调试预览</h4>
+        <el-col :span="14" class="right-column">
+          <div class="section-header">
+            <h4 class="section-title">调试预览</h4>
           </div>
           <div class="chat-area py-20">
             <div class="flex align-center px-24">
@@ -173,7 +108,7 @@
                 </ColorAvater>
                 <ColorAvater name="Agent" pinyinColor shape="square" />
               </div>
-              <h4 style="margin: 0; padding-left: 12px">
+              <h4 class="agent-title">
                 {{ applicationInfo.name || 'Agent名称' }}
               </h4>
             </div>
@@ -189,7 +124,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { QuestionFilled } from '@element-plus/icons-vue'
 
 const showIconEdit = ref(false)
 
@@ -210,6 +144,7 @@ const applicationInfo = ref({
 </script>
 
 <style scoped lang="scss">
+// 基础布局样式
 .content-body {
   height: calc(100vh - 190px);
   display: flex;
@@ -217,6 +152,57 @@ const applicationInfo = ref({
   overflow: hidden;
 }
 
+.full-height {
+  height: 100%;
+}
+
+.full-width {
+  width: 100%;
+}
+
+// 左侧列样式
+.left-column {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: scroll;
+  box-sizing: border-box;
+}
+
+// 右侧列样式
+.right-column {
+  border-left: 1px solid #e5e7eb;
+}
+
+// 区域标题样式
+.section-header {
+  margin-bottom: 16px;
+  padding-left: 16px;
+}
+
+.section-title {
+  margin: 0;
+}
+
+// 表单相关样式
+.form-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-container {
+  padding: 16px;
+  padding-top: 0;
+}
+
+// Agent标题样式
+.agent-title {
+  margin: 0;
+  padding-left: 12px;
+}
+
+// AI模型表单项样式
 .ai-model-form-item {
   :deep(.el-form-item__label) {
     width: 100% !important;
@@ -225,12 +211,14 @@ const applicationInfo = ref({
   }
 }
 
+// 模型标签样式
 .model-label {
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
   margin-bottom: -8px;
+  
   .param-setting {
     color: var(--app-color-primary);
     &:hover {
@@ -243,6 +231,49 @@ const applicationInfo = ref({
   width: 100%;
 }
 
+// 字数限制提示样式
+.word-limit {
+  color: #9ca3af;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+// 应用图标容器样式
+.app-icon-container {
+  user-select: none;
+  position: relative;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  
+  .edit-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+  }
+}
+
+// 聊天区域样式
+.chat-area {
+  height: calc(100vh - 230px);
+  background-color: #eef0f4;
+  border-radius: 8px;
+  box-sizing: border-box;
+  margin-left: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-container {
+  margin-top: 24px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+// 其他预览相关样式
 .hint-label {
   display: flex;
   align-items: center;
@@ -256,12 +287,6 @@ const applicationInfo = ref({
   border-radius: 8px;
   padding: 20px;
   height: 600px;
-}
-
-.chat-container {
-  margin-top: 24px;
-  height: 100%;
-  overflow: scroll;
 }
 
 .chat-preview {
@@ -280,6 +305,7 @@ const applicationInfo = ref({
   .avatar-container {
     width: 40px;
     height: 40px;
+    
     .avatar {
       width: 100%;
       height: 100%;
@@ -294,32 +320,7 @@ const applicationInfo = ref({
   }
 }
 
-.app-icon-container {
-  user-select: none;
-  position: relative;
-  width: 30px;
-  height: 30px;
-  cursor: pointer;
-  .edit-icon {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-  }
-}
-
-.word-limit {
-  color: #9ca3af;
-  font-size: 12px;
-  margin-left: 8px;
-}
-
-:deep(.el-input__wrapper) {
-  background-color: #fff;
-}
-
+// 开关相关样式
 .switch-row {
   display: flex;
   flex-direction: column;
@@ -340,11 +341,8 @@ const applicationInfo = ref({
   font-size: 14px;
 }
 
-.chat-area {
-  height: calc(100vh - 230px);
-  background-color: #eef0f4;
-  border-radius: 8px;
-  box-sizing: border-box;
-  margin-left: 20px;
+// 深度选择器样式
+:deep(.el-input__wrapper) {
+  background-color: #fff;
 }
 </style>

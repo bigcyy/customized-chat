@@ -22,7 +22,7 @@ const applicationRouter = {
       component: () => import('@/views/application/index.vue')
     },
     {
-      path: '/application/:id/:type',
+      path: '/application/:id',
       name: 'application-detail',
       meta: {
         title: 'Agent详情',
@@ -42,7 +42,7 @@ const applicationRouter = {
             icon: 'icon-all',
             iconActive: 'icon-all-fill',
             active: 'overview',
-            parentPath: '/application/:id/:type',
+            parentPath: '/application/:id',
             parentName: 'application-detail',
           },
           component: () => import('@/views/application-overview/index.vue')
@@ -55,7 +55,7 @@ const applicationRouter = {
             icon: 'icon-setting',
             iconActive: 'icon-setting1',
             active: 'setting',
-            parentPath: '/application/:id/:type',
+            parentPath: '/application/:id',
             parentName: 'application-detail',
           },
           component: () => import('@/views/application/ApplicationSetting.vue')
@@ -68,7 +68,7 @@ const applicationRouter = {
             icon: 'icon-hit',
             iconActive: 'icon-hit-fill',
             active: 'hit-test',
-            parentPath: '/application/:id/:type',
+            parentPath: '/application/:id',
             parentName: 'application-detail',
           },
           component: () => import('@/views/hint-test/index.vue')
@@ -81,7 +81,7 @@ const applicationRouter = {
             icon: 'icon-log',
             iconActive: 'icon-log-fill',
             active: 'log',
-            parentPath: '/application/:id/:type',
+            parentPath: '/application/:id',
             parentName: 'application-detail',
           },
           component: () => import('@/views/log/index.vue')

@@ -51,8 +51,9 @@ public class ApplicationController {
     public R add(@RequestBody ApplicationDto applicationDto) {
         Application app = BeanConverter.source(applicationDto).target(Application.class)
                 .convert();
+        app.setApplicationType("Agent");
         applicationService.save(app);
-        return R.ok().data("applicationId",app.getId());
+        return R.ok().data("id",app.getId());
     }
 
     @PutMapping

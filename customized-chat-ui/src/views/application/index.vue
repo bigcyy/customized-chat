@@ -63,7 +63,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import CreateApplicationDialog from './component/CreateApplicationDialog.vue'
-import ColorAvater from '@/components/color-avater/index.vue'
+import ColorAvater from '@/components/avaters/coloer-avater.vue'
 import { VideoPlay, Setting, More } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 

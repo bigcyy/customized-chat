@@ -16,12 +16,6 @@
       <el-form-item label="Agent描述" prop="description">
         <el-input v-model="applicationForm.description" placeholder="请输入Agent描述" />
       </el-form-item>
-      <el-form-item label="Agent类型" prop="applicationType">
-        <el-radio-group v-model="applicationForm.applicationType">
-          <el-radio-button value="SIMPLE">简单Agent</el-radio-button>
-          <el-radio-button value="COMPLEX">复杂Agent</el-radio-button>
-        </el-radio-group>
-      </el-form-item>
     </el-form>
     <template #footer>
       <el-button type="primary" @click="createApplication">创建Agent</el-button>

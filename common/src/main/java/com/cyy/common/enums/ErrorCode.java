@@ -36,7 +36,8 @@ public enum ErrorCode {
 
     SUCCESS("00000", "success"),
     CLIENT_ERROR("A0000","客户端错误"),
-    SYSTEM_ERROR("B0000", "系统内部异常");
+    SYSTEM_ERROR("B0000", "系统内部异常"),
+    APPLICATION_NO_MODEL_CONFIG_ERROR("B0401","应用模型配置错误");
 
     /**
      * 状态码

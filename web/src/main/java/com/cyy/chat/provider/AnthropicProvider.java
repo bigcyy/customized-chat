@@ -4,6 +4,7 @@ import com.cyy.common.exception.ClientGlobalException;
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
 import org.springframework.ai.anthropic.api.AnthropicApi;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.ModelDescription;
@@ -33,16 +34,17 @@ public class AnthropicProvider implements EnrichedModelProvider{
     }
 
     @Override
-    public Boolean checkModelConnect(String baseUrl, String apiKey, String modelId) {
+    public ChatModel getChatModel(String baseUrl, String apiKey, String modelId) {
         AnthropicApi api = new AnthropicApi(baseUrl,apiKey);
-        AnthropicChatModel chatModel = AnthropicChatModel.builder().anthropicApi(api).build();
-        AnthropicChatOptions options = AnthropicChatOptions.builder().model(AnthropicApi.ChatModel.valueOf(modelId)).build();
-        Prompt prompt = new Prompt("only say hi", options);
-        try {
-            ChatResponse response = chatModel.call(prompt);
-            return response != null;
-        }catch (RuntimeException err){
-            throw new ClientGlobalException("无法访问模型");
-        }
+        AnthropicChatOptions options = AnthropicChatOptions
+                .builder()
+                .model(AnthropicApi.ChatModel.valueOf(modelId))
+                .build();
+        return AnthropicChatModel
+                .builder()
+                .defaultOptions(options)
+                .anthropicApi(api)
+                .build();
+
     }
 }

@@ -80,6 +80,41 @@ h5 {
   padding: calc(var(--app-base-px) * 3);
 }
 
+.px-8 {
+  padding-left: var(--app-base-px);
+  padding-right: var(--app-base-px);
+}
+
+.px-16 {
+  padding-left: calc(var(--app-base-px) * 2);
+  padding-right: calc(var(--app-base-px) * 2);
+}
+
+.px-24 {
+  padding-left: calc(var(--app-base-px) * 3);
+  padding-right: calc(var(--app-base-px) * 3);
+}
+
+.py-8 {
+  padding-top: var(--app-base-px);
+  padding-bottom: var(--app-base-px);
+}
+
+.py-16 {
+  padding-top: calc(var(--app-base-px) * 2);
+  padding-bottom: calc(var(--app-base-px) * 2);
+}
+
+.py-24 {
+  padding-top: calc(var(--app-base-px) * 3);
+  padding-bottom: calc(var(--app-base-px) * 3);
+}
+
+.py-20 {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
 .mt-4 {
   margin-top: calc(var(--app-base-px) - 4px);
 }
@@ -169,6 +204,10 @@ h5 {
 
 .text-sm {
   font-size: 14px;
+}
+
+.text-dark {
+  color: #3f4a54;
 }
 
 .divider {

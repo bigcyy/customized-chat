@@ -45,7 +45,7 @@ public class ChatSession implements Serializable {
      * 会话摘要
      */
     @Schema(description = "会话摘要")
-    private String abstract;
+    private String chatAbstract;
 
     /**
      * 最后更新时间

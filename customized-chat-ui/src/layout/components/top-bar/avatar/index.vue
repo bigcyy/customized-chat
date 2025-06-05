@@ -1,9 +1,7 @@
 <template>
   <el-dropdown trigger="click" type="primary">
     <div class="avatar-container">
-      <el-avatar :size="30">
-        <img src="@/assets/user-icon.svg" alt="avatar" />
-      </el-avatar>
+      <UserAvater />
       <div>名字</div>
       <IconFont name="icon-down"></IconFont>
     </div>

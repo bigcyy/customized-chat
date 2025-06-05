@@ -9,8 +9,9 @@ declare module 'vue' {
   export interface GlobalComponents {
     AiChat: typeof import('./src/components/ai-chat/index.vue')['default']
     AnswerContent: typeof import('./src/components/ai-chat/answer-content/index.vue')['default']
+    Avaters: typeof import('./src/components/avaters/index.vue')['default']
     ChatInputOperate: typeof import('./src/components/ai-chat/chat-input-operate/index.vue')['default']
-    ColorAvater: typeof import('./src/components/color-avater/index.vue')['default']
+    ColoerAvater: typeof import('./src/components/avaters/coloer-avater.vue')['default']
     EchartsRander: typeof import('./src/components/markdown/EchartsRander.vue')['default']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
@@ -60,10 +61,12 @@ declare module 'vue' {
     MdPreview: typeof import('./src/components/markdown/MdPreview.vue')['default']
     MdRenderer: typeof import('./src/components/markdown/MdRenderer.vue')['default']
     NProgress: typeof import('./src/components/NProgress.vue')['default']
+    Opening: typeof import('./src/components/ai-chat/opening/index.vue')['default']
     Prologue: typeof import('./src/components/ai-chat/prologue/index.vue')['default']
     QuestionContent: typeof import('./src/components/ai-chat/question-content/index.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    UserAvater: typeof import('./src/components/avaters/user-avater.vue')['default']
   }
   export interface ComponentCustomProperties {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

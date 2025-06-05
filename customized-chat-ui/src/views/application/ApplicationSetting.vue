@@ -7,7 +7,7 @@
     <div class="content-body">
       <el-row style="height: 100%">
         <el-col
-          :span="9"
+          :span="10"
           style="
             height: 100%;
             display: flex;
@@ -157,12 +157,12 @@
             </el-form>
           </div>
         </el-col>
-        <el-col :span="15" style="border-left: 1px solid #e5e7eb">
+        <el-col :span="14" style="border-left: 1px solid #e5e7eb">
           <div class="mb-16" style="padding-left: 16px">
             <h4 class="title-decoration-1" style="margin: 0">调试预览</h4>
           </div>
-          <div class="p-16 chat-area">
-            <div class="flex align-center">
+          <div class="chat-area py-20">
+            <div class="flex align-center px-24">
               <div
                 @mouseenter="showIconEdit = true"
                 @mouseleave="showIconEdit = false"
@@ -177,44 +177,8 @@
                 {{ applicationInfo.name || '应用名称' }}
               </h4>
             </div>
-            <div class="chat-container">
-              <div class="chat-content custom-scrollbar">
-                <div class="message-box" v-for="(item, index) in arr" :key="index">
-                  <div class="message-box">
-                    <div class="bot-message">
-                      您好，我是 {{ applicationInfo.name || 'XXX' }} 小助手，您可以向我提出
-                      {{ applicationInfo.name || 'XXX' }} 使用问题。
-                    </div>
-                    <div class="suggested-questions">
-                      <div class="question-item">
-                        <i class="question-icon">📝</i>
-                        <span>{{ applicationInfo.name || 'XXX' }} 主要功能有什么？</span>
-                      </div>
-                      <div class="question-item">
-                        <i class="question-icon">📝</i>
-                        <span>{{ applicationInfo.name || 'XXX' }} 如何收费？</span>
-                      </div>
-                      <div class="question-item">
-                        <i class="question-icon">📝</i>
-                        <span class="">需要转人工服务</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="chat-input">
-                <el-input
-                  v-model="inputContent"
-                  class="input-area"
-                  placeholder="请输入问题，Ctrl+Enter 换行，Enter发送"
-                  :rows="4"
-                  resize="none"
-                  :input-style="{ backgroundColor: '#fff' }"
-                />
-                <div class="send-icon">
-                  <el-icon><Position /></el-icon>
-                </div>
-              </div>
+            <div class="chat-container custom-scrollbar px-24">
+              <AiChat :application="applicationInfo" />
             </div>
           </div>
         </el-col>
@@ -225,9 +189,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { QuestionFilled, Position } from '@element-plus/icons-vue'
-
-const arr = ref([1, 2, 3, 4, 5, 5, 6, 7, 7, 7])
+import { QuestionFilled } from '@element-plus/icons-vue'
 
 const showIconEdit = ref(false)
 
@@ -245,7 +207,6 @@ const applicationInfo = ref({
   voiceBroadcast: false
 })
 
-const inputContent = ref('')
 </script>
 
 <style scoped lang="scss">
@@ -298,8 +259,9 @@ const inputContent = ref('')
 }
 
 .chat-container {
+  margin-top: 24px;
   height: 100%;
-  overflow: hidden;
+  overflow: scroll;
 }
 
 .chat-preview {
@@ -318,7 +280,6 @@ const inputContent = ref('')
   .avatar-container {
     width: 40px;
     height: 40px;
-
     .avatar {
       width: 100%;
       height: 100%;
@@ -333,24 +294,8 @@ const inputContent = ref('')
   }
 }
 
-.chat-content {
-  margin-top: 20px;
-  height: calc(100% - 100px);
-  overflow-y: scroll;
-}
-
-.message-box {
-  background: white;
-  border-radius: 8px;
-  padding: 16px;
-
-  .bot-message {
-    color: #374151;
-    margin-bottom: 16px;
-  }
-}
-
 .app-icon-container {
+  user-select: none;
   position: relative;
   width: 30px;
   height: 30px;
@@ -362,45 +307,6 @@ const inputContent = ref('')
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.4);
-  }
-}
-
-.suggested-questions {
-  .question-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px;
-    margin: 4px 0;
-    color: #6b7280;
-    cursor: pointer;
-    border-radius: 4px;
-    background: #f3f4f6;
-
-    &:hover {
-      background: #e5e7eb;
-    }
-
-    .question-icon {
-      font-style: normal;
-    }
-  }
-}
-
-.chat-input {
-  margin-top: 16px;
-  background: white;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  .input-area {
-    padding: 10px;
-  }
-
-  .send-icon {
-    color: #9ca3af;
   }
 }
 
@@ -440,6 +346,5 @@ const inputContent = ref('')
   border-radius: 8px;
   box-sizing: border-box;
   margin-left: 20px;
-  padding-left: 20px;
 }
 </style>

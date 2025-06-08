@@ -2,7 +2,7 @@
   <div>
     <div class="flex-between mb-16">
       <h3>设置</h3>
-      <div><el-button type="primary">保存并发布</el-button></div>
+      <div><el-button type="primary" @click="handleSaveAndPublish" :disabled="isSaving" :loading="isSaving" >保存并发布</el-button></div>
     </div>
     <div class="content-body">
       <el-row class="full-height">
@@ -55,31 +55,35 @@
                     v-model="applicationInfo.modelId"
                     placeholder="请选择 AI 模型"
                     class="full-width"
+                    :loading="isLoadingModels"
                   >
-                    <el-option label="模型1" value="1" />
-                    <el-option label="模型2" value="2" />
-                    <el-option label="模型6" value="6" />
+                    <el-option 
+                      v-for="model in modelOptions" 
+                      :key="model.value" 
+                      :label="model.label" 
+                      :value="model.value" 
+                    />
                   </el-select>
                 </div>
               </el-form-item>
               <el-form-item label="角色设定">
                 <el-input
-                  v-model="applicationInfo.prologue"
+                  v-model="modelPrompt"
                   type="textarea"
-                  placeholder="你是 xxx 小助手"
+                  placeholder="请输入角色设定"
                   :rows="4"
                   resize="none"
                   :input-style="{ backgroundColor: '#fff' }"
                 />
               </el-form-item>
-              <!-- <el-form-item label="历史聊天记录">
+              <el-form-item label="历史聊天记录">
                 <el-input-number
-                  v-model="applicationInfo.historyCount"
+                  v-model="modelChatMemory"
                   placeholder="请输入历史聊天记录"
                   controls-position="right"
                   class="full-width"
                 />
-              </el-form-item> -->
+              </el-form-item>
               <el-form-item class="mb-0" label="开场白">
                 <el-input
                   v-model="applicationInfo.prologue"
@@ -124,20 +128,128 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { Edit } from '@element-plus/icons-vue'
 import type { ApplicationForm } from '@/api/type/application'
+import modelApi from '@/api/model'
+import applicationApi from '@/api/application'
+import AiChat from '@/components/ai-chat/index.vue'
+import ColorAvater from '@/components/avaters/coloer-avater.vue'
+import { MsgSuccess, MsgError } from '@/utils/message'
+
+const isSaving = ref(false)
 const showIconEdit = ref(false)
+
+// 定义模型选项类型
+interface ModelOption {
+  label: string
+  value: number
+}
+
+const modelOptions = ref<ModelOption[]>([]) // 存储模型选项
+const isLoadingModels = ref(false) // 加载状态
 
 const applicationInfo = ref<ApplicationForm>({
   name: '',
   description: '',
   prologue: `您好，我是 XXX 小助手，您可以向我提出 XXX 使用问题。\n- XXX 主要功能有什么？\n- XXX 如何收费？\n- 需要转人工服务`,
-  workflow: '',
+  workflow: undefined,
   icon: '',
   applicationType: '',
   modelId: undefined,
-  modelSetting: '',
-  datasetSetting: ''
+  modelSetting: {
+    prompt: '你是 xxx 小助手',
+    chatMemory: 1,
+    system: '',
+    noReferencesPrompt: '',
+    referencesPrompt: '',
+    modelConfig: {
+      temperature: 0.7,
+      maxTokens: 10240,
+      topP: 0.95
+    }
+  },
+  datasetSetting: undefined
+})
+
+const handleSaveAndPublish = async() => {
+  isSaving.value = true
+  createApplication().finally(() => {
+    isSaving.value = false
+  })
+}
+// 创建安全的计算属性来处理 modelSetting 的双向绑定
+const modelPrompt = computed({
+  get: () => applicationInfo.value.modelSetting?.prompt || '',
+  set: (value: string) => {
+    if (!applicationInfo.value.modelSetting) {
+      applicationInfo.value.modelSetting = {
+        prompt: '',
+        chatMemory: 1,
+        system: '',
+        noReferencesPrompt: '',
+        referencesPrompt: '',
+        modelConfig: {
+          temperature: 0.7,
+          maxTokens: 10240,
+          topP: 0.95
+        }
+      }
+    }
+    applicationInfo.value.modelSetting.prompt = value
+  }
+})
+
+const modelChatMemory = computed({
+  get: () => applicationInfo.value.modelSetting?.chatMemory || 1,
+  set: (value: number) => {
+    if (!applicationInfo.value.modelSetting) {
+      applicationInfo.value.modelSetting = {
+        prompt: '',
+        chatMemory: 1,
+        system: '',
+        noReferencesPrompt: '',
+        referencesPrompt: '',
+        modelConfig: {
+          temperature: 0.7,
+          maxTokens: 10240,
+          topP: 0.95
+        }
+      }
+    }
+    applicationInfo.value.modelSetting.chatMemory = value
+  }
+})
+
+// 获取已保存的模型列表
+const fetchModelOptions = async () => {
+  try {
+    isLoadingModels.value = true
+    const res = await modelApi.getSavedModels()
+    modelOptions.value = res.data.models.map((model: any) => ({
+      label: model.displayName,
+      value: model.id
+    }))
+  } catch (error) {
+    console.error('获取模型列表失败:', error)
+  } finally {
+    isLoadingModels.value = false
+  }
+}
+
+const createApplication = async() => {
+  try {
+    const res = await applicationApi.createApplication(applicationInfo.value)
+    MsgSuccess('创建应用成功')
+  } catch (error) {
+    MsgError('创建应用失败')
+    console.error('创建应用失败:', error)
+  }
+}
+
+// 组件挂载时获取数据
+onMounted(() => {
+  fetchModelOptions()
 })
 
 </script>

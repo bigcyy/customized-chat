@@ -55,23 +55,19 @@
         </el-col>
       </el-row>
     </div>
-
-    <CreateApplicationDialog ref="createApplicationDialog" />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref } from 'vue'
-import CreateApplicationDialog from './component/CreateApplicationDialog.vue'
 import ColorAvater from '@/components/avaters/coloer-avater.vue'
 import { VideoPlay, Setting, More } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const search = ref('')
-const createApplicationDialog = ref<InstanceType<typeof CreateApplicationDialog>>()
 const openCreateApplication = () => {
-  createApplicationDialog.value?.open()
+  router.push('/application/new/setting')
 }
 
 const listApplications = () => {

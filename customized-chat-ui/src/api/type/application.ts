@@ -1,3 +1,5 @@
+import type { ModelConfig } from "./model"
+
 interface ApplicationForm {
   id?: number
   name: string
@@ -7,7 +9,7 @@ interface ApplicationForm {
   icon?: string
   applicationType?: string
   modelId?: number
-  modelSetting?: string
+  modelSetting?: ModelSetting
   datasetSetting?: string
 }
 
@@ -59,5 +61,17 @@ interface TempChatDto {
   chatHistories?: ChatMessage[]
 }
 
+/**
+ * 模型设置
+ */
+interface ModelSetting {
+  prompt: string
+  chatMemory: number
+  system: string
+  noReferencesPrompt: string
+  referencesPrompt: string
+  modelConfig: ModelConfig
+}
 
-export type { ApplicationForm, chatType, ChatMessage, TempChatDto }
+
+export type { ApplicationForm, chatType, ChatMessage, TempChatDto, ModelSetting }

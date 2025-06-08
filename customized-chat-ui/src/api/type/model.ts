@@ -15,12 +15,15 @@ interface ModelConfigForm {
   modelType: string
   modelName: string
   provider: string
-  modelConfig: {
-    temperature: number
-    maxTokens: number
-  }
+  modelConfig: ModelConfig
   apiUrl: string
   apiKey: string
+}
+
+interface ModelConfig {
+  temperature: number
+  maxTokens: number
+  topP: number
 }
 
 interface ModelVO {
@@ -31,4 +34,4 @@ interface ModelVO {
   provider: Provider
 }
 
-export type { Provider, ModelType, ModelConfigForm, ModelVO }
+export type { Provider, ModelType, ModelConfigForm, ModelConfig, ModelVO }

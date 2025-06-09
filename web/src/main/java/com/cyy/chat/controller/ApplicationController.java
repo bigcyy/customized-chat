@@ -13,6 +13,8 @@ import com.cyy.common.converter.BeanConverter;
 import com.cyy.common.exception.ClientGlobalException;
 import com.cyy.common.utils.R;
 import com.cyy.common.utils.SnowFlakeIdGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -50,7 +52,17 @@ public class ApplicationController {
 
     @PostMapping
     public R add(@RequestBody ApplicationDto applicationDto) {
-        Application app = BeanConverter.source(applicationDto).target(Application.class)
+        Application app = BeanConverter
+                .source(applicationDto).target(Application.class)
+                .streamMap(ApplicationDto::getModelSetting)
+                .to((target, dto) ->{
+                    try {
+                        String modelSettingString = new ObjectMapper().writeValueAsString(dto);
+                        target.setModelSetting(modelSettingString);
+                    } catch (JsonProcessingException e) {
+                        throw new IllegalArgumentException("模型配置转换失败", e);
+                    }
+                })
                 .convert();
         app.setApplicationType("Agent");
         applicationService.save(app);

@@ -5,8 +5,6 @@ import com.cyy.chat.model.*;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.model.Content;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -27,7 +25,7 @@ public interface IChatRecordService extends IService<ChatRecord> {
 
     ModelSetting getModelSetting(Application application, Model model);
 
-    ModelSetting mergeModelSetting(ModelSetting modelSettingFromApplication, ModelParamsSetting modelParamsSettingFromModel);
+    ModelSetting mergeModelSetting(ModelSetting modelSettingFromApplication, modelConfig modelParamsSettingFromModel);
 
     SystemMessage getSystemMessage(ModelSetting modelSetting);
 

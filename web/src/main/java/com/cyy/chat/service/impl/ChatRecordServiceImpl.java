@@ -128,12 +128,12 @@ public class ChatRecordServiceImpl extends ServiceImpl<ChatRecordMapper, ChatRec
     @Override
     public ModelSetting getModelSetting(Application application, Model model) {
 
-        ModelParamsSetting modelParamsSettingFromModel = null;
+        modelConfig modelParamsSettingFromModel = null;
         ModelSetting modelSettingFromApplication = null;
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             if (model.getModelConfig() != null){
-                modelParamsSettingFromModel = objectMapper.readValue(model.getModelConfig(), ModelParamsSetting.class);
+                modelParamsSettingFromModel = objectMapper.readValue(model.getModelConfig(), modelConfig.class);
             }
             if(application.getModelSetting() != null) {
                 modelSettingFromApplication = objectMapper.readValue(application.getModelSetting(), ModelSetting.class);
@@ -145,15 +145,15 @@ public class ChatRecordServiceImpl extends ServiceImpl<ChatRecordMapper, ChatRec
     }
 
     @Override
-    public ModelSetting mergeModelSetting(ModelSetting modelSettingFromApplication, ModelParamsSetting modelParamsSettingFromModel) {
-        if(modelSettingFromApplication.getModelParamsSetting().getMaxTokens() == null){
-            modelSettingFromApplication.getModelParamsSetting().setMaxTokens(modelParamsSettingFromModel.getMaxTokens());
+    public ModelSetting mergeModelSetting(ModelSetting modelSettingFromApplication, modelConfig modelParamsSettingFromModel) {
+        if(modelSettingFromApplication.getModelConfig().getMaxTokens() == null){
+            modelSettingFromApplication.getModelConfig().setMaxTokens(modelParamsSettingFromModel.getMaxTokens());
         }
-        if(modelSettingFromApplication.getModelParamsSetting().getTemperature() == null){
-            modelSettingFromApplication.getModelParamsSetting().setTemperature(modelParamsSettingFromModel.getTemperature());
+        if(modelSettingFromApplication.getModelConfig().getTemperature() == null){
+            modelSettingFromApplication.getModelConfig().setTemperature(modelParamsSettingFromModel.getTemperature());
         }
-        if(modelSettingFromApplication.getModelParamsSetting().getTopP() == null){
-            modelSettingFromApplication.getModelParamsSetting().setTopP(modelParamsSettingFromModel.getTopP());
+        if(modelSettingFromApplication.getModelConfig().getTopP() == null){
+            modelSettingFromApplication.getModelConfig().setTopP(modelParamsSettingFromModel.getTopP());
         }
         return modelSettingFromApplication;
     }

@@ -16,5 +16,5 @@ public class ModelSetting {
     private String noReferencesPrompt;
     private String referencesPrompt;
     private Integer chatMemory;
-    private ModelParamsSetting modelParamsSetting;
+    private modelConfig modelConfig;
 }

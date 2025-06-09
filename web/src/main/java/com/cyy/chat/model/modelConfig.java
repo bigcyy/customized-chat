@@ -10,7 +10,7 @@ import lombok.Data;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class ModelParamsSetting {
+public class modelConfig {
     private String temperature;
     private String topP;
     private String maxTokens;

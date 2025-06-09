@@ -1,4 +1,4 @@
-import Result from '@/request/Result'
+import { Result, type Page } from '@/request/Result'
 import type { Ref } from 'vue'
 import { get, post, put, del, postSSEStream } from '@/request'
 import type { ApplicationForm, TempChatDto } from '@/api/type/application'
@@ -11,10 +11,6 @@ const createApplication: (data: ApplicationForm, loading?: Ref<boolean>) => Prom
 ) => {
   return post('/application', data, {}, loading)
 }
-
-// const postChatMessage: (chat_id: string, data: any) => Promise<any> = (chat_id, data) => {
-//   return postStream(`/api/chat_message/${chat_id}`, data)
-// }
 
 /**
  * 根据Agent id 打开会话
@@ -29,8 +25,6 @@ const openChat: (application_id: String) => Promise<Result<any>> = (application_
 /**
  * 打开临时会话
  * @param 参数
-
- }
  */
 const openTempChat: () => Promise<Result<any>> = () => {
   return post(`/application/temp/chat/session`)
@@ -58,4 +52,8 @@ const postTempChatMessageStream = (
   return postSSEStream(`/application/temp/chat/session/${sessionId}`, data, onMessage, onError, onComplete)
 }
 
-export default { createApplication, openChat, openTempChat, postTempChatMessageStream }
+const listApplications: (page: number, size: number) => Promise<Result<any>> = (page, size) => {
+  return get('/application', { pageIndex : page, pageSize : size })
+}
+
+export default { createApplication, openChat, openTempChat, postTempChatMessageStream, listApplications }

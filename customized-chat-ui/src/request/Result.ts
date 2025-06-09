@@ -18,4 +18,11 @@ export class Result<T> {
   }
 }
 
+export interface Page<T> {
+  records: T[],
+  total: number,
+  size: number,
+  current: number
+}
+
 export default Result

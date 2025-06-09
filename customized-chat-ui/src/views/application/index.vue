@@ -4,7 +4,7 @@
       <h4>Agent</h4>
       <el-input v-model="search" placeholder="请输入内容" style="width: 240px" />
     </div>
-    <div class="content-body">
+    <div class="content-body" v-loading="loading">
       <el-row :gutter="20">
         <el-col :span="6">
           <el-card shadow="hover" class="application-card application-start" style="--el-card-padding: 8px">
@@ -19,20 +19,20 @@
             </div>
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" v-for="application in applicationPage?.records" :key="application.id">
           <el-card shadow="hover" class="application-card">
             <div class="card-content">
               <div class="card-header">
                 <div class="app-info">
-                  <ColorAvater name="advance" pinyinColor shape="square" />
+                  <ColorAvater :name="application.name" pinyinColor shape="square" />
                   <div class="app-text">
-                    <div class="app-name">advance</div>
+                    <div class="app-name">{{ application.name }}</div>
                     <div class="app-creator">创建者: admin</div>
                   </div>
                 </div>
-                <el-tag type="warning">高级编排</el-tag>
+                <el-tag type="warning">{{ application.applicationType }}</el-tag>
               </div>
-              <div class="card-description">test</div>
+              <div class="card-description">{{ application.description }}</div>
               <div class="card-actions">
                 <el-button-group>
                   <el-tooltip content="演示" placement="top">
@@ -54,29 +54,58 @@
           </el-card>
         </el-col>
       </el-row>
+      <div class="pagination-section">
+        <el-pagination
+          layout="prev, pager, next" 
+          :total="applicationPage?.total" 
+          :page-size="size" 
+          v-model:current-page="page"
+          @current-change="loadApplicationPage"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import ColorAvater from '@/components/avaters/coloer-avater.vue'
 import { VideoPlay, Setting, More } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
+import applicationApi from '@/api/application'
+import type { ApplicationForm } from '@/api/type/application'
+import type { Page } from '@/request/Result'
+import { MsgError } from '@/utils/message'
 
 const router = useRouter()
 const search = ref('')
+const applicationPage = ref<Page<ApplicationForm>>()
+const loading = ref(false)
+const page = ref(1)
+const size = ref(15)
+
 const openCreateApplication = () => {
   router.push('/application/new/setting')
-}
-
-const listApplications = () => {
-  console.log('listApplications')
 }
 
 const openApplicationSetting = () => {
   router.push('/application/1/simple/setting')
 }
+
+const loadApplicationPage = () => {
+  loading.value = true
+  applicationApi.listApplications(page.value, size.value).then(resp => {
+    applicationPage.value = resp.data.agents
+  }).catch(err => {
+    MsgError(err.message)
+  }).finally(() => {
+    loading.value = false
+  })
+}
+
+onMounted(() => {
+  loadApplicationPage()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -99,9 +128,20 @@ const openApplicationSetting = () => {
 
 .content-body {
   margin-top: 20px;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  .pagination-section {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+  }
 }
 
 .application-card {
+  margin-top: 10px;
   height: 160px;
   .card-content {
     height: 100%;

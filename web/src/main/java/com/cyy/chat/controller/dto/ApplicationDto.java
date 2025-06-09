@@ -2,14 +2,16 @@ package com.cyy.chat.controller.dto;
 
 import com.cyy.chat.model.ModelSetting;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
-@ToString
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(name = "Application", description = "应用信息")
+@Builder
 public class ApplicationDto {
     @Schema(description = "应用 id", example = "2")
     private Long id;

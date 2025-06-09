@@ -1,11 +1,13 @@
 package com.cyy.chat.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.cyy.chat.controller.dto.ApplicationDto;
 import com.cyy.chat.controller.dto.TempChatDto;
 import com.cyy.chat.model.Application;
 import com.cyy.chat.model.ChatMessage;
 import com.cyy.chat.model.ChatSession;
+import com.cyy.chat.model.ModelSetting;
 import com.cyy.chat.service.IApplicationService;
 import com.cyy.chat.service.IChatRecordService;
 import com.cyy.chat.service.IChatSessionService;
@@ -19,6 +21,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.stereotype.Controller;
@@ -145,8 +148,29 @@ public class ApplicationController {
 
     @GetMapping
     @Operation(summary = "获取应用列表")
-    public R list() {
-        List<Application> applicationList = applicationService.list();
-        return R.ok().data("applicationList",applicationList);
+    public R list(
+            @Parameter(description = "List current page", example = "0") @RequestParam(defaultValue = "0") int pageIndex,
+            @Parameter(description = "Number of list pagination ", example = "8") @RequestParam(defaultValue = "8") int pageSize) {
+        // query page from database
+        Page<Application> page = new Page<>(pageIndex, pageSize);
+        applicationService.page(page);
+        // page<entity> -> page<dto>
+        List<ApplicationDto> applicationDtoList = page.getRecords().stream().map(item -> {
+            ApplicationDto applicationDto = new ApplicationDto();
+            BeanUtils.copyProperties(item, applicationDto);
+            try {
+                if (item.getModelSetting() != null) {
+                    applicationDto.setModelSetting(new ObjectMapper().readValue(item.getModelSetting(), ModelSetting.class));
+                }
+                return applicationDto;
+            } catch (JsonProcessingException e) {
+                throw new ClientGlobalException("模型配置转换失败", e.getMessage());
+            }
+        }).toList();
+        Page<ApplicationDto> dtoPage = new Page<>();
+        BeanUtils.copyProperties(page, dtoPage);
+        dtoPage.setRecords(applicationDtoList);
+
+        return R.ok().data("agents",dtoPage);
     }
 }

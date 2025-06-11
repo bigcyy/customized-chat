@@ -46,7 +46,7 @@
                     </el-button>
                   </el-tooltip>
                   <el-tooltip content="设置" placement="top">
-                    <el-button type="primary" text @click="handleDelete(application.id)">
+                    <el-button type="primary" text @click="handleDelete(application.id!)">
                       <el-icon><Delete /></el-icon>
                     </el-button>
                   </el-tooltip>

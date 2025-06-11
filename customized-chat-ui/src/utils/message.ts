@@ -36,11 +36,6 @@ export const MsgError = (message: string) => {
   })
 }
 
-/**
- * 删除知识库
- * @param 参数 message: {title, description,type}
- */
-
 export const MsgConfirm = (title: string, description: string, options?: any) => {
   const defaultOptions: Object = {
     showCancelButton: true,

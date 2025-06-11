@@ -77,6 +77,10 @@ const listApplications: (page: number, size: number) => Promise<Result<any>> = (
   return get('/application', { pageIndex : page, pageSize : size })
 }
 
+const deleteApplication: (id: number) => Promise<Result<any>> = (id) => {
+  return del(`/application/${id}`)
+}
+
 export default { 
   createApplication, 
   getApplicationById,
@@ -84,5 +88,6 @@ export default {
   openChat, 
   openTempChat, 
   postTempChatMessageStream, 
-  listApplications 
+  listApplications,
+  deleteApplication
 }

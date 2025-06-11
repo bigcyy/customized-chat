@@ -91,11 +91,10 @@ public class ApplicationController {
         return R.ok();
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{id}")
     @Operation(summary = "删除应用")
-    public R delete(
-            @Parameter(description = "应用 id", example = "1") @RequestParam Long applicationId) {
-        applicationService.removeById(applicationId);
+    public R delete(@Parameter(description = "应用 id", example = "1") @PathVariable Long id) {
+        applicationService.removeById(id);
         return R.ok();
     }
 

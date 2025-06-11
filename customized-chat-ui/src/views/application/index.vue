@@ -45,9 +45,11 @@
                       <el-icon><Setting /></el-icon>
                     </el-button>
                   </el-tooltip>
-                  <el-button type="primary" text>
-                    <el-icon><More /></el-icon>
-                  </el-button>
+                  <el-tooltip content="设置" placement="top">
+                    <el-button type="primary" text @click="handleDelete(application.id)">
+                      <el-icon><Delete /></el-icon>
+                    </el-button>
+                  </el-tooltip>
                 </el-button-group>
               </div>
             </div>
@@ -70,12 +72,12 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
 import ColorAvater from '@/components/avaters/coloer-avater.vue'
-import { VideoPlay, Setting, More } from '@element-plus/icons-vue'
+import { VideoPlay, Setting, Delete } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import applicationApi from '@/api/application'
 import type { ApplicationForm } from '@/api/type/application'
 import type { Page } from '@/request/Result'
-import { MsgError } from '@/utils/message'
+import { MsgError, MsgConfirm, MsgSuccess } from '@/utils/message'
 
 const router = useRouter()
 const search = ref('')
@@ -103,6 +105,14 @@ const loadApplicationPage = () => {
   }).finally(() => {
     loading.value = false
   })
+}
+
+const handleDelete = async (id: number) => {
+  MsgConfirm('确定删除该Agent吗？', '').then(async () => {
+    await applicationApi.deleteApplication(id)
+    MsgSuccess('删除成功')
+    loadApplicationPage()
+  }).catch(err => {})
 }
 
 onMounted(() => {

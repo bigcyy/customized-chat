@@ -13,6 +13,27 @@ const createApplication: (data: ApplicationForm, loading?: Ref<boolean>) => Prom
 }
 
 /**
+ * 根据ID获取Agent
+ */
+const getApplicationById: (id: number, loading?: Ref<boolean>) => Promise<Result<any>> = (
+  id,
+  loading
+) => {
+  return get(`/application/${id}`, {}, loading)
+}
+
+/**
+ * 更新Agent
+ */
+const updateApplication: (data: ApplicationForm, loading?: Ref<boolean>) => Promise<Result<any>> = (
+  data,
+  loading
+) => {
+  console.log(data)
+  return put('/application', data, {}, loading)
+}
+
+/**
  * 根据Agent id 打开会话
  * @param 参数
 
@@ -56,4 +77,12 @@ const listApplications: (page: number, size: number) => Promise<Result<any>> = (
   return get('/application', { pageIndex : page, pageSize : size })
 }
 
-export default { createApplication, openChat, openTempChat, postTempChatMessageStream, listApplications }
+export default { 
+  createApplication, 
+  getApplicationById,
+  updateApplication,
+  openChat, 
+  openTempChat, 
+  postTempChatMessageStream, 
+  listApplications 
+}

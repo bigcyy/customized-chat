@@ -29,6 +29,7 @@ import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * <p>
@@ -75,8 +76,18 @@ public class ApplicationController {
     @PutMapping
     @Operation(summary = "更新应用信息")
     public R update(@RequestBody ApplicationDto applicationDto) {
-        Application app = BeanConverter.source(applicationDto).target(Application.class).convert();
-        applicationService.updateById(app);
+        Application application = new Application();
+        ModelSetting modelSetting = applicationDto.getModelSetting();
+        if(modelSetting != null){
+            try {
+                String modelSettingString = new ObjectMapper().writeValueAsString(modelSetting);
+                application.setModelSetting(modelSettingString);
+            } catch (JsonProcessingException e) {
+                throw new ClientGlobalException("模型配置转换失败", e.getMessage());
+            }
+        }
+        BeanUtils.copyProperties(applicationDto, application);
+        applicationService.updateById(application);
         return R.ok();
     }
 
@@ -91,7 +102,18 @@ public class ApplicationController {
     @GetMapping("/{applicationId}")
     public R get(@Parameter(description = "应用 id", example = "1") @PathVariable Long applicationId) {
         Application application = applicationService.getById(applicationId);
-        return R.ok().data("application",application);
+        ApplicationDto applicationDto = new ApplicationDto();
+        Optional.ofNullable(application.getModelSetting())
+                .ifPresent(modelSetting -> {
+                    try {
+                        ModelSetting modelSettingObj = new ObjectMapper().readValue(modelSetting, ModelSetting.class);
+                        applicationDto.setModelSetting(modelSettingObj);
+                    } catch (JsonProcessingException e) {
+                        throw new ClientGlobalException("模型配置转换失败", e.getMessage());
+                    }
+        });
+        BeanUtils.copyProperties(application, applicationDto);
+        return R.ok().data("application",applicationDto);
     }
 
     @PostMapping("/{applicationId}/chat/session")

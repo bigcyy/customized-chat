@@ -41,7 +41,7 @@
                     </el-button>
                   </el-tooltip>
                   <el-tooltip content="设置" placement="top">
-                    <el-button type="primary" text @click="openApplicationSetting">
+                    <el-button type="primary" text @click="openApplicationSetting(application.id)">
                       <el-icon><Setting /></el-icon>
                     </el-button>
                   </el-tooltip>
@@ -88,8 +88,10 @@ const openCreateApplication = () => {
   router.push('/application/new/setting')
 }
 
-const openApplicationSetting = () => {
-  router.push('/application/1/simple/setting')
+const openApplicationSetting = (id?: number) => {
+  if (id) {
+    router.push(`/application/${id}/setting`)
+  }
 }
 
 const loadApplicationPage = () => {

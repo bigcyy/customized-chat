@@ -1,10 +1,10 @@
 <template>
   <div>
     <div class="flex-between mb-16">
-      <h3>设置</h3>
-      <div><el-button type="primary" @click="handleSaveAndPublish" :disabled="isSaving" :loading="isSaving" >保存并发布</el-button></div>
+      <h3>Agent设置</h3>
+      <div><el-button type="primary" @click="handleSaveAndPublish" :disabled="isSaving || isLoading" :loading="isSaving" >保存并发布</el-button></div>
     </div>
-    <div class="content-body">
+    <div class="content-body" v-loading="isLoading">
       <el-row class="full-height">
         <el-col :span="10" class="left-column custom-scrollbar">
           <div class="section-header">
@@ -128,7 +128,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Edit } from '@element-plus/icons-vue'
 import type { ApplicationForm } from '@/api/type/application'
 import modelApi from '@/api/model'
@@ -137,8 +138,19 @@ import AiChat from '@/components/ai-chat/index.vue'
 import ColorAvater from '@/components/avaters/coloer-avater.vue'
 import { MsgSuccess, MsgError } from '@/utils/message'
 
+const route = useRoute()
+const router = useRouter()
 const isSaving = ref(false)
+const isLoading = ref(false)
 const showIconEdit = ref(false)
+
+// 判断是新增还是编辑模式
+const isEditMode = computed(() => route.params.id !== 'new')
+const applicationId = computed(() => {
+  const id = route.params.id as string
+  return id === 'new' ? null : parseInt(id)
+})
+
 
 // 定义模型选项类型
 interface ModelOption {
@@ -172,11 +184,18 @@ const applicationInfo = ref<ApplicationForm>({
   datasetSetting: undefined
 })
 
+// 保存或更新操作
 const handleSaveAndPublish = async() => {
   isSaving.value = true
-  createApplication().finally(() => {
+  try {
+    if (isEditMode.value) {
+      await updateApplication()
+    } else {
+      await createApplication()
+    }
+  } finally {
     isSaving.value = false
-  })
+  }
 }
 // 创建安全的计算属性来处理 modelSetting 的双向绑定
 const modelPrompt = computed({
@@ -237,15 +256,51 @@ const fetchModelOptions = async () => {
   }
 }
 
+// 加载应用数据
+const loadApplicationData = async () => {
+  if (!applicationId.value) return
+  
+  try {
+    isLoading.value = true
+    const res = await applicationApi.getApplicationById(applicationId.value)
+    if (res.data) {
+      // console.log(res.data.application)
+      applicationInfo.value = { ...res.data.application }
+    }
+  } catch (error) {
+    MsgError('加载应用数据失败')
+  } finally {
+    isLoading.value = false
+  }
+}
+
 const createApplication = async() => {
   try {
     const res = await applicationApi.createApplication(applicationInfo.value)
     MsgSuccess('创建应用成功')
+    router.push(`/application/${res.data.id}/setting`)
   } catch (error) {
     MsgError('创建应用失败')
-    console.error('创建应用失败:', error)
   }
 }
+
+// 更新应用
+const updateApplication = async() => {
+  try {
+    console.log(applicationInfo.value)
+    await applicationApi.updateApplication(applicationInfo.value)
+    MsgSuccess('更新应用成功')
+  } catch (error) {
+    MsgError('更新应用失败')
+  }
+}
+
+// 监听路由变化，重新加载数据
+watch(() => route.params.id, (newId) => {
+  if (newId && newId !== 'new') {
+    loadApplicationData()
+  }
+}, { immediate: true })
 
 // 组件挂载时获取数据
 onMounted(() => {

@@ -118,7 +118,13 @@
               </h4>
             </div>
             <div class="chat-container custom-scrollbar px-24">
-              <AiChat :application="applicationInfo" :type="'debug'" />
+              <AiChat
+              ref="aiChatRef"
+              :application="applicationInfo"
+              :chat-messages="chatMessages"
+              :isMessageSending="isMessageSending"
+              @send-message="handleSendMessage"
+            />
             </div>
           </div>
         </el-col>
@@ -128,10 +134,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Edit } from '@element-plus/icons-vue'
-import type { ApplicationForm } from '@/api/type/application'
+import type { ApplicationForm, ChatMessage } from '@/api/type/application'
 import modelApi from '@/api/model'
 import applicationApi from '@/api/application'
 import AiChat from '@/components/ai-chat/index.vue'
@@ -143,6 +149,10 @@ const router = useRouter()
 const isSaving = ref(false)
 const isLoading = ref(false)
 const showIconEdit = ref(false)
+const tempSessionId = ref<number | undefined>(undefined)
+const aiChatRef = ref()
+const chatMessages = ref<ChatMessage[]>([])
+const isMessageSending = ref(false)
 
 // 判断是新增还是编辑模式
 const isEditMode = computed(() => route.params.id !== 'new')
@@ -294,6 +304,96 @@ const updateApplication = async() => {
     MsgError('更新应用失败')
   }
 }
+
+/**
+ * 打开会话，如果错误会以 ai 身份发送错误信息，并返回 undefined
+ */
+const openTempSession = async () => {
+  try{
+    const res = await applicationApi.openTempChat()
+    tempSessionId.value = res.data.sessionId
+  }catch(err){
+    console.log(err)
+    writeErrMessage(err)
+  }
+}
+
+const writeErrMessage = (err: any, updateMessage?: ChatMessage ) => {
+  if(updateMessage && updateMessage.role === 'assistant' && updateMessage.loading){
+    // 更新最后一条消息为错误消息
+    updateMessage.loading = false
+    updateMessage.messageText = err.message
+    updateMessage.isError = true
+    aiChatRef.value.scrollToBottom()
+    return
+  }
+  const errMessage: ChatMessage = {
+    sessionId: undefined,
+    messageIndex: chatMessages.value.length,
+    role: 'assistant',
+    messageText: err.message,
+    loading: false,
+    isError: true
+  }
+  chatMessages.value.push(errMessage)
+  aiChatRef.value.scrollToBottom()
+}
+
+// 处理消息发送
+const handleSendMessage = async (message: string) => {
+  if (isMessageSending.value || !message.trim()) return
+  isMessageSending.value = true
+  // 判断是否打开会话
+  if (!tempSessionId.value) {
+    await openTempSession()
+  }
+  if(!tempSessionId.value){
+    return
+  }
+
+  // 添加用户消息
+  const userMessage: ChatMessage = {
+    sessionId: tempSessionId.value,
+    messageIndex: chatMessages.value.length,
+    role: 'user',
+    messageText: message.trim(),
+  }
+  chatMessages.value.push(userMessage)
+  
+  // 添加AI加载状态
+  const aiMessage: ChatMessage = reactive({
+    sessionId: tempSessionId.value,
+    messageIndex: chatMessages.value.length,
+    role: 'assistant',
+    messageText: '',
+    loading: true
+  })
+  chatMessages.value.push(aiMessage)
+  aiChatRef.value.scrollToBottom()
+
+  
+  // 发送消息
+  applicationApi.postTempChatMessageStream(tempSessionId.value, {
+    application: applicationInfo.value,
+    chatMessage: userMessage,
+    chatHistories: chatMessages.value.filter(item => !item.isError)
+    },
+     (data) => { 
+      aiMessage.loading = false
+      console.log(data)
+      aiMessage.messageText = aiMessage.messageText + data
+      aiChatRef.value.scrollToBottom()
+    },
+     (err) => { 
+      console.log(err)
+      writeErrMessage(err, chatMessages.value[chatMessages.value.length - 1])
+     }, () => { 
+      console.log('完成')
+      isLoading.value = false
+    })
+}
+
+
 
 // 监听路由变化，重新加载数据
 watch(() => route.params.id, (newId) => {

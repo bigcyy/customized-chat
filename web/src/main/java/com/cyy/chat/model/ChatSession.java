@@ -9,8 +9,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 /**
@@ -27,6 +29,8 @@ import lombok.ToString;
 @TableName("chat_session")
 @Schema(name = "ChatSession", description = "聊天会话表")
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ChatSession implements Serializable {
 
     private static final long serialVersionUID = 1L;

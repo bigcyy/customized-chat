@@ -217,8 +217,19 @@ export const postSSEStream = (
         if(chunk && chunk.startsWith('data:')){
           if(split){
             for (const index in split) {
-              const jsonChunk = JSON?.parse(split[index].replace('data:', ''))
-              onMessage?.(jsonChunk.message)
+              const dataContent = split[index].replace('data:', '').trim()
+              try {
+                // 尝试解析为JSON（临时聊天格式）
+                const jsonChunk = JSON.parse(dataContent)
+                if (jsonChunk.message) {
+                  onMessage?.(jsonChunk.message)
+                } else {
+                  onMessage?.(dataContent)
+                }
+              } catch {
+                // 如果不是JSON，直接使用内容（正式聊天格式）
+                onMessage?.(dataContent)
+              }
             }
           }
         }

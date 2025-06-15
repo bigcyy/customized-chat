@@ -24,11 +24,24 @@ public class DBMemory implements ChatMemory {
 
     @Override
     public void add(String conversationId, List<Message> messageList) {
+        if(messageList == null || messageList.isEmpty()){
+            throw new SystemGlobalException("DBMemory 不允许添加空消息！");
+        }
         // 查询会话对应的最后一次聊天
         ChatMessage lastMessage = chatMessageMapper.getLastMessage(Long.parseLong(conversationId));
-        // 判断最后一次聊天是否是用户信息，若不是抛出异常
+        // 判断最后一次聊天是否存在，不存在则插入一条用户消息
         if(lastMessage == null){
-            throw new SystemGlobalException("会话异常");
+            if(messageList.get(0).getMessageType() != MessageType.USER){
+                throw new SystemGlobalException("第一条消息不允许添加非用户消息！");
+            }
+            lastMessage = ChatMessage.builder()
+                    .messageIndex(0)
+                    .messageText(messageList.get(0).getText())
+                    .sessionId(Long.parseLong(conversationId))
+                    .role(MessageType.USER.getValue())
+                    .build();
+            chatMessageMapper.insert(lastMessage);
+            return;
         }
 
         // 插入新的聊天记录
@@ -37,23 +50,12 @@ public class DBMemory implements ChatMemory {
         }else{
             // todo token花销
             Message messagesLast = messageList.get(messageList.size() - 1);
-            ChatMessage chatMessage;
-            if(MessageType.USER == MessageType.fromValue(lastMessage.getRole())){
-                chatMessage = ChatMessage.builder()
-                        .messageText(messagesLast.getText())
-                        .messageIndex(lastMessage.getMessageIndex() + 1)
-                        .sessionId(Long.parseLong(conversationId))
-                        .role(MessageType.ASSISTANT.name())
-                        .build();
-            }else{
-                chatMessage = ChatMessage.builder()
-                        .messageText(messagesLast.getText())
-                        .messageIndex(lastMessage.getMessageIndex() + 1)
-                        .sessionId(Long.parseLong(conversationId))
-                        .role(MessageType.USER.name())
-                        .build();
-            }
-
+            ChatMessage chatMessage = ChatMessage.builder()
+                    .messageText(messagesLast.getText())
+                    .messageIndex(lastMessage.getMessageIndex() + 1)
+                    .sessionId(Long.parseLong(conversationId))
+                    .role(messagesLast.getMessageType().getValue())
+                    .build();
             chatMessageMapper.insert(chatMessage);
         }
     }

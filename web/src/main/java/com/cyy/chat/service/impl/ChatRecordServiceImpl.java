@@ -56,17 +56,6 @@ public class ChatRecordServiceImpl extends ServiceImpl<ChatRecordMapper, ChatRec
     public Flux<String> chat(Application application, ChatSession chatSession, ChatMessage userMessage) {
         // 保存当前信息
         ChatMessage lastMessage = chatMessageMapper.getLastMessage(chatSession.getId());
-
-        userMessage = ChatMessage
-                .builder()
-                .role(MessageType.USER.name())
-                .sessionId(chatSession.getId())
-                .messageText(userMessage.getMessageText())
-                .messageIndex(lastMessage == null ? 0 : lastMessage.getMessageIndex() + 1)
-                .build();
-
-        chatMessageMapper.insert(userMessage);
-
         ChatModel chatModel = buildChatModel(application.getModelId());
 
         ChatClient chatClient = buildChatClient(dbMemory, chatModel);

@@ -51,13 +51,13 @@
           :autosize="{ minRows: 1, maxRows: 4 }"
           placeholder="请输入您的问题..."
           @keydown.enter.prevent="handleSend"
-          :disabled="isLoading"
+          :disabled="props.disabled"
           class="message-input"
         />
-        <el-button 
-          type="primary" 
+        <el-button
+          type="primary"
           @click="handleSend"
-          :disabled="!inputMessage.trim() || isLoading"
+          :disabled="!inputMessage.trim() || isMessageSending || disabled"
           class="send-button"
         >
           <el-icon>
@@ -71,18 +71,22 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, ref, nextTick, defineEmits, reactive } from 'vue'
+import { defineProps, ref, nextTick, defineEmits, reactive, watch, computed } from 'vue'
 import { Loading, Right } from '@element-plus/icons-vue'
 import UserAvater from '@/components/avaters/user-avater.vue'
 import MdRenderer from '@/components/markdown/MdRenderer.vue'
-import applicationApi from '@/api/application'
 import type { ApplicationForm, ChatMessage } from '@/api/type/application'
 
 const props = withDefaults(defineProps<{
   application: ApplicationForm,
-  type: 'debug' | 'normal'
+  chatMessages: ChatMessage[],
+  loadingMessages?: boolean,
+  disabled?: boolean,
+  isMessageSending: boolean
 }>(), {
-  type: 'normal'
+  type: 'normal',
+  loadingMessages: false,
+  disabled: false,
 })
 
 const emit = defineEmits<{
@@ -91,10 +95,7 @@ const emit = defineEmits<{
 
 // 响应式数据
 const inputMessage = ref('')
-const chatMessages = ref<ChatMessage[]>([])
-const isLoading = ref(false)
 const messagesContainer = ref<HTMLElement>()
-const sessionId = ref<number | undefined>(undefined)
 
 // 滚动到底部
 const scrollToBottom = () => {
@@ -105,137 +106,16 @@ const scrollToBottom = () => {
   })
 }
 
-// 生成消息ID
-const generateMessageId = () => {
-  return Date.now().toString() + Math.random().toString(36).substr(2, 9)
-}
-
-// 发送消息
-const sendMessage = async (message: string) => {
-  if (!message.trim() || isLoading.value) return
-  // 判断是否打开会话
-  if (!sessionId.value) {
-    await openChat()
-  }
-  if(!sessionId.value){
-    return
-  }
-  // 添加用户消息
-  const userMessage: ChatMessage = {
-    sessionId: sessionId.value,
-    messageIndex: chatMessages.value.length,
-    role: 'user',
-    messageText: message.trim(),
-  }
-  chatMessages.value.push(userMessage)
-  
-  // 添加AI加载状态
-  const aiMessage: ChatMessage = reactive({
-    sessionId: sessionId.value,
-    messageIndex: chatMessages.value.length,
-    role: 'assistant',
-    messageText: '',
-    loading: true
-  })
-  chatMessages.value.push(aiMessage)
-  
-  isLoading.value = true
-  scrollToBottom()
-  
-  // 触发父组件事件
-  emit('sendMessage', message.trim())
-
-  // 发送消息
-  applicationApi.postTempChatMessageStream(sessionId.value, {
-    application: props.application,
-    chatMessage: userMessage,
-    chatHistories: chatMessages.value.filter(item => !item.isError)
-    },
-     (data) => { 
-      aiMessage.loading = false
-      console.log(data)
-      aiMessage.messageText = aiMessage.messageText + data
-      scrollToBottom()
-    },
-     (err) => { 
-      console.log(err)
-      writeErrMessage(err, chatMessages.value[chatMessages.value.length - 1])
-     }, () => { 
-      console.log('完成')
-      isLoading.value = false
-    })
-}
-
 // 处理发送按钮点击
 const handleSend = () => {
-  if (inputMessage.value.trim()) {
-    sendMessage(inputMessage.value)
-    inputMessage.value = ''
-  }
-}
-
-// 暴露方法给父组件
-const addAIResponse = (content: string) => {
-  const lastMessage = chatMessages.value[chatMessages.value.length - 1]
-  if (lastMessage && lastMessage.role === 'assistant' && lastMessage.loading) {
-    lastMessage.loading = false
-    lastMessage.messageText = content
-    isLoading.value = false
-    scrollToBottom()
-  }
-}
-
-const setLoading = (loading: boolean) => {
-  isLoading.value = loading
-}
-
-/**
- * 打开会话，如果错误会以 ai 身份发送错误信息，并返回 undefined
- */
-const openChat = async () : Promise<number|undefined> => {
-  try{
-    if(props.type === 'debug'){
-      const res = await applicationApi.openTempChat()
-      sessionId.value = res.data.sessionId
-      return res.data.sessionId
-    }else{
-      const res = await applicationApi.openTempChat()
-      sessionId.value = res.data.sessionId
-      return res.data.sessionId
-    }
-  }catch(err){
-    console.log(err)
-    writeErrMessage(err)
-    return undefined
-  }
-}
-
-const writeErrMessage = (err: any, updateMessage?: ChatMessage ) => {
-  if(updateMessage && updateMessage.role === 'assistant' && updateMessage.loading){
-    updateMessage.loading = false
-    updateMessage.messageText = err.message
-    updateMessage.isError = true
-    isLoading.value = false
-    scrollToBottom()
-    return
-  }
-  const errMessage: ChatMessage = {
-    sessionId: undefined,
-    messageIndex: chatMessages.value.length,
-    role: 'assistant',
-    messageText: err.message,
-    loading: false,
-    isError: true
-  }
-  chatMessages.value.push(errMessage)
-  isLoading.value = false
-  scrollToBottom()
+  if (!inputMessage.value.trim() || props.isMessageSending || props.disabled) return
+  emit('sendMessage', inputMessage.value.trim())
+  inputMessage.value = ''
 }
 
 // 暴露给父组件使用
 defineExpose({
-  addAIResponse,
-  setLoading
+  scrollToBottom
 })
 </script>
 

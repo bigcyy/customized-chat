@@ -13,6 +13,19 @@ interface ApplicationForm {
   datasetSetting?: string
 }
 
+/**
+ * 聊天会话接口 - 对应后端ChatSession实体
+ */
+interface ChatSession {
+  id?: number
+  applicationId: number
+  chatAbstract: string
+  updateTime: string
+  createTime: string
+  isDeleted: boolean
+  clientId?: string
+}
+
 interface chatType {
   id?: string
   problem_text: string
@@ -40,15 +53,15 @@ interface chatType {
 }
 
 interface ChatMessage {
-  id?: Number,
-  sessionId: Number | undefined,
-  messageIndex: Number,
+  id?: number,
+  sessionId: number | undefined,
+  messageIndex: number,
   messageText: string,
-  messageToken?: Number,
-  updateTime?: Number,
-  createTime?: Number,
-  loading?: Boolean,
-  isError?: Boolean,
+  messageToken?: number,
+  updateTime?: string,
+  createTime?: string,
+  loading?: boolean,
+  isError?: boolean,
   role: 'user' | 'assistant'
 }
 
@@ -74,4 +87,4 @@ interface ModelSetting {
 }
 
 
-export type { ApplicationForm, chatType, ChatMessage, TempChatDto, ModelSetting }
+export type { ApplicationForm, chatType, ChatMessage, TempChatDto, ModelSetting, ChatSession }

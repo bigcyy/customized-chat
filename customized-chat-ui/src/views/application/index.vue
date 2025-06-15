@@ -36,7 +36,7 @@
               <div class="card-actions">
                 <el-button-group>
                   <el-tooltip content="演示" placement="top">
-                    <el-button type="primary" text>
+                    <el-button type="primary" text @click="openApplicationChat(application.id)">
                       <el-icon><VideoPlay /></el-icon>
                     </el-button>
                   </el-tooltip>
@@ -45,7 +45,7 @@
                       <el-icon><Setting /></el-icon>
                     </el-button>
                   </el-tooltip>
-                  <el-tooltip content="设置" placement="top">
+                  <el-tooltip content="删除" placement="top">
                     <el-button type="primary" text @click="handleDelete(application.id!)">
                       <el-icon><Delete /></el-icon>
                     </el-button>
@@ -58,11 +58,12 @@
       </el-row>
       <div class="pagination-section">
         <el-pagination
-          layout="prev, pager, next" 
-          :total="applicationPage?.total" 
-          :page-size="size" 
-          v-model:current-page="page"
-          @current-change="loadApplicationPage"
+          layout="prev, pager, next"
+          :total="applicationPage?.total"
+          :page-size="size"
+          :current-page="page"
+          @update:current-page="handleCurrentPageChange"
+          @update:page-size="handlePageSizeChange"
         />
       </div>
     </div>
@@ -107,12 +108,31 @@ const loadApplicationPage = () => {
   })
 }
 
+const handleCurrentPageChange = (newPage: number) => {
+  page.value = newPage
+  loadApplicationPage()
+}
+
+
+const handlePageSizeChange = (newSize: number) => {
+  size.value = newSize
+  loadApplicationPage()
+}
+
 const handleDelete = async (id: number) => {
   MsgConfirm('确定删除该Agent吗？', '').then(async () => {
     await applicationApi.deleteApplication(id)
     MsgSuccess('删除成功')
     loadApplicationPage()
-  }).catch(err => {})
+  }).catch(() => {})
+}
+
+const openApplicationChat = (id?: number) => {
+  if (!id) {
+    MsgError('Agent ID 不能为空')
+    return
+  }
+  router.push(`/application/chat/${id}`)
 }
 
 onMounted(() => {

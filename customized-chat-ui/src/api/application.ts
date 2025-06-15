@@ -34,21 +34,11 @@ const updateApplication: (data: ApplicationForm, loading?: Ref<boolean>) => Prom
 }
 
 /**
- * 根据Agent id 打开会话
- * @param 参数
-
- }
- */
-const openChat: (application_id: String) => Promise<Result<any>> = (application_id) => {
-  return get(`/api/chat_open/${application_id}`)
-}
-
-/**
  * 打开临时会话
  * @param 参数
  */
 const openTempChat: () => Promise<Result<any>> = () => {
-  return post(`/application/temp/chat/session`)
+  return post(`/temp/chat/session`)
 }
 
 /**
@@ -61,7 +51,7 @@ const openTempChat: () => Promise<Result<any>> = () => {
  * @returns 控制对象，包含abort方法用于取消请求
  */
 const postTempChatMessageStream = (
-  sessionId: number | undefined, 
+  sessionId: number | undefined,
   data: TempChatDto,
   onMessage?: (data: string) => void,
   onError?: (error: any) => void,
@@ -70,7 +60,7 @@ const postTempChatMessageStream = (
   abort: () => void,
   promise: Promise<any>
 } => {
-  return postSSEStream(`/application/temp/chat/session/${sessionId}`, data, onMessage, onError, onComplete)
+  return postSSEStream(`/temp/chat/session/${sessionId}`, data, onMessage, onError, onComplete)
 }
 
 const listApplications: (page: number, size: number) => Promise<Result<any>> = (page, size) => {
@@ -81,13 +71,12 @@ const deleteApplication: (id: number) => Promise<Result<any>> = (id) => {
   return del(`/application/${id}`)
 }
 
-export default { 
-  createApplication, 
+export default {
+  createApplication,
   getApplicationById,
   updateApplication,
-  openChat, 
-  openTempChat, 
-  postTempChatMessageStream, 
+  openTempChat,
+  postTempChatMessageStream,
   listApplications,
   deleteApplication
 }

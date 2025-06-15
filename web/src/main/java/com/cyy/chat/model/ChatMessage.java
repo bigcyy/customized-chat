@@ -5,8 +5,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 /**
@@ -22,6 +24,8 @@ import lombok.ToString;
 @ToString
 @TableName("chat_message")
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(name = "ChatMessage", description = "")
 public class ChatMessage implements Serializable {
 

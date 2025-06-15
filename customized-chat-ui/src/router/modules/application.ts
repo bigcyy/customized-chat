@@ -87,6 +87,17 @@ const applicationRouter = {
           component: () => import('@/views/log/index.vue')
         }
       ]
+    },
+    {
+      path: '/application/chat/:id',
+      name: 'application-chat',
+      meta: {
+        title: 'Chat',
+        activeMenu: '/application',
+        parentPath: '/application',
+        parentName: 'application'
+      },
+      component: () => import('@/views/chat/index.vue')
     }
   ]
 }

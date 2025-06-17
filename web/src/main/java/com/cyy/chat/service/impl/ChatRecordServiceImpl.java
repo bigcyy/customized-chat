@@ -1,9 +1,10 @@
 package com.cyy.chat.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.cyy.chat.advisor.DBMemory;
 import com.cyy.chat.controller.dto.ApplicationDto;
 import com.cyy.chat.dao.ChatMessageMapper;
+import com.cyy.chat.memory.JdbcMemoryRepository;
+import com.cyy.chat.memory.JdbcMessageWindowChatMemory;
 import com.cyy.chat.model.*;
 import com.cyy.chat.dao.ChatRecordMapper;
 import com.cyy.chat.provider.ModelFactory;
@@ -18,7 +19,7 @@ import jakarta.annotation.Resource;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.InMemoryChatMemory;
+import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.messages.*;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
@@ -50,7 +51,7 @@ public class ChatRecordServiceImpl extends ServiceImpl<ChatRecordMapper, ChatRec
     @Resource
     private ChatMessageMapper chatMessageMapper;
     @Resource
-    private DBMemory dbMemory;
+    private JdbcMemoryRepository jdbcMemoryRepository;
 
     @Override
     public Flux<String> chat(Application application, ChatSession chatSession, ChatMessage userMessage) {
@@ -58,7 +59,12 @@ public class ChatRecordServiceImpl extends ServiceImpl<ChatRecordMapper, ChatRec
         ChatMessage lastMessage = chatMessageMapper.getLastMessage(chatSession.getId());
         ChatModel chatModel = buildChatModel(application.getModelId());
 
-        ChatClient chatClient = buildChatClient(dbMemory, chatModel);
+        ChatClient chatClient = buildChatClient(
+                JdbcMessageWindowChatMemory
+                        .builder()
+                        .maxMessages(4)
+                        .chatMemoryRepository(jdbcMemoryRepository)
+                        .build(), chatModel);
 
         return chatClient
                 .prompt(userMessage.getMessageText())
@@ -77,7 +83,11 @@ public class ChatRecordServiceImpl extends ServiceImpl<ChatRecordMapper, ChatRec
         ChatModel chatModel = buildChatModel(application.getModelId());
 
         // 封装记忆
-        InMemoryChatMemory memory = new InMemoryChatMemory();
+        JdbcMessageWindowChatMemory memory = JdbcMessageWindowChatMemory.builder()
+                .maxMessages(4)
+                .chatMemoryRepository(new InMemoryChatMemoryRepository())
+                .build();
+
         if(chatHistories != null && !chatHistories.isEmpty()){
             chatHistories.sort(Comparator.comparing(ChatMessage::getMessageIndex));
             List<Message> messages = chatMessageListToSpringAiMessageList(chatHistories);
@@ -181,7 +191,7 @@ public class ChatRecordServiceImpl extends ServiceImpl<ChatRecordMapper, ChatRec
      */
     private ChatClient buildChatClient(ChatMemory memory, ChatModel model){
         return ChatClient.builder(model)
-                .defaultAdvisors(new MessageChatMemoryAdvisor(memory))
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(memory).build())
                 .build();
     }
 

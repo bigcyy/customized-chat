@@ -35,7 +35,10 @@ public class AnthropicProvider implements EnrichedModelProvider{
 
     @Override
     public ChatModel getChatModel(String baseUrl, String apiKey, String modelId) {
-        AnthropicApi api = new AnthropicApi(baseUrl,apiKey);
+        AnthropicApi api = AnthropicApi.builder()
+                .baseUrl(baseUrl)
+                .apiKey(apiKey)
+                .build();
         AnthropicChatOptions options = AnthropicChatOptions
                 .builder()
                 .model(AnthropicApi.ChatModel.valueOf(modelId))

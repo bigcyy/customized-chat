@@ -79,9 +79,9 @@ public class SettingController {
     )
     public R listModelsByType(@PathVariable @Parameter(description = "提供商名称", required = true, example = "OpenAI") String provider,
                               @PathVariable @Parameter(description = "模型类型", required = true, example = "LLM") ModelType type) {
+        // todo 支持根据 type 获取
         return R.ok()
-                .data("models", modelFactory.getProvider(provider)
-                        .listSupportedModelByTypes(List.of(type)));
+                .data("models", modelFactory.getProvider(provider).listSupportedModels());
     }
 
     @PostMapping("/models")

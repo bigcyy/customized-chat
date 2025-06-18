@@ -1,34 +1,25 @@
 package com.cyy.chat.provider;
 
-import io.swagger.v3.oas.models.OpenAPI;
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.model.ModelDescription;
-import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.openai.api.OpenAiApi;
+import com.cyy.common.enums.ModelType;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModelName;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.List;
 
 @Component
-public class OpenAIProvider implements EnrichedModelProvider {
-
-    private final OpenAPI customOpenAPI;
-
-    public OpenAIProvider(OpenAPI customOpenAPI) {
-        this.customOpenAPI = customOpenAPI;
-    }
+public class OpenAIProvider implements ModelProvider {
 
     @Override
-    public List<? extends ModelDescription> listSupportedModels() {
-        List<? extends ModelDescription> chatModels =  Arrays
-                .stream(OpenAiApi.ChatModel.values())
+    public List<String> listSupportedModels() {
+        List<String> chatModels =  Arrays
+                .stream(OpenAiChatModelName.values())
+                .map(v -> v.toString())
                 .toList();
-//        List<? extends ModelDescription> embeddingModels = Arrays
-//                .stream(OpenAiApi.EmbeddingModel.values())
-//                .toList();
-//        return Stream.of(chatModels, embeddingModels).flatMap(List::stream).toList();
         return chatModels;
     }
 
@@ -45,19 +36,26 @@ public class OpenAIProvider implements EnrichedModelProvider {
     }
 
     @Override
-    public ChatModel getChatModel(String baseUrl, String apiKey, String modelId) {
-        OpenAiApi api = OpenAiApi.builder()
-                .baseUrl(baseUrl)
-                .apiKey(apiKey)
-                .build();
+    public List<ModelType> listSupportedModelTypes() {
+        return List.of(ModelType.LLM);
+    }
 
-        OpenAiChatOptions options = OpenAiChatOptions.builder()
-                .model(OpenAiApi.ChatModel.valueOf(modelId))
-                .build();
+    @Override
+    public ChatModel getChatModel(String baseUrl, String apiKey, String modelId) {
 
         return OpenAiChatModel.builder()
-                .openAiApi(api)
-                .defaultOptions(options)
+                .baseUrl(baseUrl)
+                .apiKey(apiKey)
+                .modelName(modelId)
+                .build();
+    }
+
+    @Override
+    public StreamingChatModel getStreamingChatModel(String baseUrl, String apiKey, String modelId) {
+        return OpenAiStreamingChatModel.builder()
+                .baseUrl(baseUrl)
+                .apiKey(apiKey)
+                .modelName(modelId)
                 .build();
     }
 

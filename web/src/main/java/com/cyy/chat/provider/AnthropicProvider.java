@@ -1,26 +1,23 @@
 package com.cyy.chat.provider;
 
-import com.cyy.common.exception.ClientGlobalException;
-import org.springframework.ai.anthropic.AnthropicChatModel;
-import org.springframework.ai.anthropic.AnthropicChatOptions;
-import org.springframework.ai.anthropic.api.AnthropicApi;
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.model.ModelDescription;
-import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.openai.api.OpenAiApi;
+import com.cyy.common.enums.ModelType;
+import dev.langchain4j.model.anthropic.AnthropicChatModel;
+import dev.langchain4j.model.anthropic.AnthropicChatModelName;
+import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.List;
 
 @Component
-public class AnthropicProvider implements EnrichedModelProvider{
+public class AnthropicProvider implements ModelProvider{
     @Override
-    public List<? extends ModelDescription> listSupportedModels() {
-        return Arrays.stream(AnthropicApi.ChatModel.values()).toList();
+    public List<String> listSupportedModels() {
+        return Arrays.stream(AnthropicChatModelName.values())
+                .map(AnthropicChatModelName::toString)
+                .toList();
     }
 
     @Override
@@ -34,20 +31,27 @@ public class AnthropicProvider implements EnrichedModelProvider{
     }
 
     @Override
+    public List<ModelType> listSupportedModelTypes() {
+        return List.of(ModelType.LLM);
+    }
+
+    @Override
     public ChatModel getChatModel(String baseUrl, String apiKey, String modelId) {
-        AnthropicApi api = AnthropicApi.builder()
-                .baseUrl(baseUrl)
-                .apiKey(apiKey)
-                .build();
-        AnthropicChatOptions options = AnthropicChatOptions
-                .builder()
-                .model(AnthropicApi.ChatModel.valueOf(modelId))
-                .build();
         return AnthropicChatModel
                 .builder()
-                .defaultOptions(options)
-                .anthropicApi(api)
+                .baseUrl(baseUrl)
+                .apiKey(apiKey)
+                .modelName(modelId)
                 .build();
 
+    }
+
+    @Override
+    public StreamingChatModel getStreamingChatModel(String baseUrl, String apiKey, String modelId) {
+        return AnthropicStreamingChatModel.builder()
+                .baseUrl(baseUrl)
+                .apiKey(apiKey)
+                .modelName(modelId)
+                .build();
     }
 }

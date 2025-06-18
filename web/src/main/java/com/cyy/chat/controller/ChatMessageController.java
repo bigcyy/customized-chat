@@ -6,7 +6,7 @@ import com.cyy.chat.model.Application;
 import com.cyy.chat.model.ChatMessage;
 import com.cyy.chat.model.ChatSession;
 import com.cyy.chat.service.IApplicationService;
-import com.cyy.chat.service.IChatRecordService;
+import com.cyy.chat.service.IChatMessageService;
 import com.cyy.chat.service.IChatSessionService;
 import com.cyy.common.exception.ClientGlobalException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,7 +24,7 @@ import java.util.Map;
 public class ChatMessageController {
 
     @Resource
-    private IChatRecordService chatRecordService;
+    private IChatMessageService chatMessageService;
     
     @Resource
     private IApplicationService applicationService;
@@ -40,7 +40,7 @@ public class ChatMessageController {
     public Flux<Map<String,String>> tempChat(@PathVariable Long sessionId, @RequestBody TempChatDto tempChatDto){
         // todo: 通过 sessionId 去获取对话
         ChatSession session = ChatSession.builder().id(sessionId).build();
-        return chatRecordService.tempChat(tempChatDto.getApplication(),session,tempChatDto.getChatMessage(),tempChatDto.getChatHistories())
+        return chatMessageService.tempChat(tempChatDto.getApplication(),session,tempChatDto.getChatMessage(),tempChatDto.getChatHistories())
                 .map(message -> Map.of("message", message));
     }
 
@@ -65,7 +65,7 @@ public class ChatMessageController {
             throw new ClientGlobalException("会话不存在");
         }
         // 执行聊天
-        return chatRecordService.chat(application, chatSession, userMessage)
+        return chatMessageService.chat(application, chatSession, userMessage)
                 .map(message -> Map.of("message", message));
     }
 }

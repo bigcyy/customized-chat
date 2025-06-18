@@ -3,9 +3,7 @@ package com.cyy.chat.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.cyy.chat.model.ChatMessage;
 import com.cyy.chat.model.ChatSession;
-import com.cyy.chat.service.IApplicationService;
 import com.cyy.chat.service.IChatMessageService;
-import com.cyy.chat.service.IChatRecordService;
 import com.cyy.chat.service.IChatSessionService;
 import com.cyy.common.exception.ClientGlobalException;
 import com.cyy.common.utils.R;
@@ -35,12 +33,6 @@ public class ChatSessionController {
 
     @Resource
     private IChatMessageService chatMessageService;
-    
-    @Resource
-    private IChatRecordService chatRecordService;
-    
-    @Resource
-    private IApplicationService applicationService;
 
     /**
      * 获取应用的聊天会话列表

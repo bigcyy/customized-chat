@@ -3,6 +3,7 @@ package com.cyy.chat.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.cyy.chat.controller.dto.ApplicationDto;
 import com.cyy.chat.model.Application;
+import com.cyy.chat.model.McpSetting;
 import com.cyy.chat.model.ModelSetting;
 import com.cyy.chat.service.IApplicationService;
 import com.cyy.common.converter.BeanConverter;
@@ -70,6 +71,17 @@ public class ApplicationController {
                 throw new ClientGlobalException("模型配置转换失败", e.getMessage());
             }
         }
+
+        McpSetting mcpSetting = applicationDto.getMcpSetting();
+        if(mcpSetting != null){
+            try {
+                String mcpSettingString = new ObjectMapper().writeValueAsString(mcpSetting);
+                application.setMcpSetting(mcpSettingString);
+            } catch (JsonProcessingException e) {
+                throw new ClientGlobalException("模型配置转换失败", e.getMessage());
+            }
+        }
+
         BeanUtils.copyProperties(applicationDto, application);
         applicationService.updateById(application);
         return R.ok();
@@ -95,6 +107,15 @@ public class ApplicationController {
                         throw new ClientGlobalException("模型配置转换失败", e.getMessage());
                     }
         });
+        Optional.ofNullable(application.getMcpSetting())
+                .ifPresent(mcpSetting -> {
+                    try {
+                        McpSetting mcpSettingObj = new ObjectMapper().readValue(mcpSetting, McpSetting.class);
+                        applicationDto.setMcpSetting(mcpSettingObj);
+                    }catch (JsonProcessingException e){
+                        throw new ClientGlobalException("mcp 配置转换失败", e.getMessage());
+                    }
+                });
         BeanUtils.copyProperties(application, applicationDto);
         return R.ok().data("application",applicationDto);
     }

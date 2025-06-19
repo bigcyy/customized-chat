@@ -11,6 +11,7 @@ interface ApplicationForm {
   modelId?: number
   modelSetting?: ModelSetting
   datasetSetting?: string
+  mcpSetting?: McpSetting
 }
 
 /**
@@ -86,5 +87,38 @@ interface ModelSetting {
   modelConfig: ModelConfig
 }
 
+/**
+ * MCP设置 - 配置MCP的相关内容
+ */
+interface McpSetting {
+  /** sse 传输形式的 mcp server */
+  sseServers?: SseTransport[]
+  /** stdio 传输形式的 mcp server */
+  stdioServers?: StdioTransport[]
+}
 
-export type { ApplicationForm, chatType, ChatMessage, TempChatDto, ModelSetting, ChatSession }
+/**
+ * SSE传输格式
+ */
+interface SseTransport {
+  /** 传输类型, sse 或 stdio */
+  type: string
+  /** sse url */
+  sseUrl: string
+  /** 发送请求时附带的请求头，可用于鉴权 */
+  header?: Record<string, string>
+}
+
+/**
+ * STDIO传输格式
+ */
+interface StdioTransport {
+  /** 传输类型, sse 或 stdio */
+  type: string
+  /** 命令, uvx 或 npx */
+  command: string
+  /** 命令的附带参数 */
+  args?: string[]
+}
+
+export type { ApplicationForm, chatType, ChatMessage, TempChatDto, ModelSetting, ChatSession, McpSetting, SseTransport, StdioTransport }

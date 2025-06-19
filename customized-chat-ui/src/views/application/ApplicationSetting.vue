@@ -94,6 +94,138 @@
                   :rows="4"
                 />
               </el-form-item>
+              
+              <!-- MCP设置部分 -->
+              <el-form-item label="工具" class="mcp-setting-form-item">
+                <div class="mcp-config-container">
+                  <div class="mcp-header">
+                    <span class="mcp-count">{{ totalMcpServers }}/{{ totalMcpServers }} 启用</span>
+                    <el-popover
+                      placement="bottom-end"
+                      :width="200"
+                      trigger="click"
+                      popper-class="mcp-add-popover"
+                    >
+                      <template #reference>
+                        <el-button type="primary" size="small" :icon="Plus">
+                          添加
+                        </el-button>
+                      </template>
+                      <div class="mcp-type-options">
+                        <div class="option-item" @click="addSseServer">
+                          <div class="option-content">
+                            <h6>SSE传输服务器</h6>
+                            <p>通过SSE协议连接的MCP服务器</p>
+                          </div>
+                        </div>
+                        <div class="option-item" @click="addStdioServer">
+                          <div class="option-content">
+                            <h6>STDIO传输服务器</h6>
+                            <p>通过STDIO协议连接的MCP服务器</p>
+                          </div>
+                        </div>
+                      </div>
+                    </el-popover>
+                  </div>
+                  
+                  <!-- 服务器列表 -->
+                  <div v-if="allMcpServers.length === 0" class="empty-state">
+                    <div class="empty-icon">🔧</div>
+                    <div class="empty-text">暂无MCP服务器配置</div>
+                    <div class="empty-description">点击右上角添加按钮配置MCP服务器</div>
+                  </div>
+                  
+                  <div v-else class="mcp-server-list">
+                    <!-- SSE服务器 -->
+                    <el-card 
+                      v-for="(server, index) in sseServers" 
+                      :key="`sse-${index}`"
+                      class="mcp-server-card"
+                      shadow="never"
+                    >
+                      <template #header>
+                        <div class="server-header">
+                          <div class="server-info">
+                            <span class="server-type">SSE</span>
+                            <span class="server-title">{{ server.sseUrl || 'SSE服务器' }}</span>
+                          </div>
+                          <div class="server-actions">
+                            <el-button 
+                              size="small" 
+                              text 
+                              @click="editSseServer(index)"
+                            >
+                              编辑
+                            </el-button>
+                            <el-button 
+                              type="danger" 
+                              size="small" 
+                              text
+                              @click="removeSseServer(index)"
+                            >
+                              删除
+                            </el-button>
+                          </div>
+                        </div>
+                      </template>
+                      <div class="server-summary">
+                        <div class="summary-item">
+                          <span class="label">URL:</span>
+                          <span class="value">{{ server.sseUrl || '未配置' }}</span>
+                        </div>
+                        <div class="summary-item" v-if="server.header && Object.keys(server.header).length > 0">
+                          <span class="label">请求头:</span>
+                          <span class="value">{{ Object.keys(server.header).length }} 个</span>
+                        </div>
+                      </div>
+                    </el-card>
+
+                    <!-- STDIO服务器 -->
+                    <el-card 
+                      v-for="(server, index) in stdioServers" 
+                      :key="`stdio-${index}`"
+                      class="mcp-server-card"
+                      shadow="never"
+                    >
+                      <template #header>
+                        <div class="server-header">
+                          <div class="server-info">
+                            <span class="server-type">STDIO</span>
+                            <span class="server-title">{{ server.command || 'STDIO服务器' }}</span>
+                          </div>
+                          <div class="server-actions">
+                            <el-button 
+                              size="small" 
+                              text 
+                              @click="editStdioServer(index)"
+                            >
+                              编辑
+                            </el-button>
+                            <el-button 
+                              type="danger" 
+                              size="small" 
+                              text
+                              @click="removeStdioServer(index)"
+                            >
+                              删除
+                            </el-button>
+                          </div>
+                        </div>
+                      </template>
+                      <div class="server-summary">
+                        <div class="summary-item">
+                          <span class="label">命令:</span>
+                          <span class="value">{{ server.command || '未配置' }}</span>
+                        </div>
+                        <div class="summary-item" v-if="server.args && server.args.length > 0">
+                          <span class="label">参数:</span>
+                          <span class="value">{{ server.args.length }} 个</span>
+                        </div>
+                      </div>
+                    </el-card>
+                  </div>
+                </div>
+              </el-form-item>
             </el-form>
           </div>
         </el-col>
@@ -130,14 +262,123 @@
         </el-col>
       </el-row>
     </div>
+
+    <!-- MCP配置弹窗 -->
+    <el-dialog
+      v-model="mcpDialogVisible"
+      :title="mcpDialogTitle"
+      width="600px"
+      :before-close="handleMcpDialogClose"
+    >
+      <!-- SSE服务器配置 -->
+      <div v-if="currentMcpType === 'sse'">
+        <el-form :model="currentSseServer" label-position="top">
+          <el-form-item label="SSE URL" required>
+            <el-input 
+              v-model="currentSseServer.sseUrl" 
+              placeholder="请输入SSE服务器URL"
+            />
+          </el-form-item>
+          <el-form-item label="请求头">
+            <div class="header-config">
+              <div 
+                v-for="(headerValue, headerKey) in currentSseServer.header" 
+                :key="headerKey"
+                class="header-item"
+              >
+                <el-input 
+                  v-model="currentHeaderKeys[headerKey]"
+                  placeholder="Header名称"
+                  class="header-key"
+                  @blur="updateCurrentHeaderKey(headerKey, currentHeaderKeys[headerKey])"
+                />
+                <el-input 
+                  v-model="currentSseServer.header![headerKey]" 
+                  placeholder="Header值"
+                  class="header-value"
+                />
+                <el-button 
+                  type="danger" 
+                  size="small" 
+                  text
+                  @click="removeCurrentHeader(headerKey)"
+                  :icon="Delete"
+                />
+              </div>
+              <el-button 
+                type="primary" 
+                size="small" 
+                text
+                @click="addCurrentHeader"
+                :icon="Plus"
+              >
+                添加Header
+              </el-button>
+            </div>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <!-- STDIO服务器配置 -->
+      <div v-if="currentMcpType === 'stdio'">
+        <el-form :model="currentStdioServer" label-position="top">
+          <el-form-item label="命令" required>
+            <el-input 
+              v-model="currentStdioServer.command" 
+              placeholder="请输入命令 (如: uvx, npx)"
+            />
+          </el-form-item>
+          <el-form-item label="参数">
+            <div class="args-config">
+              <div 
+                v-for="(arg, argIndex) in currentStdioServer.args" 
+                :key="argIndex"
+                class="arg-item"
+              >
+                <el-input 
+                  v-model="currentStdioServer.args![argIndex]" 
+                  placeholder="请输入参数"
+                  class="arg-input"
+                />
+                <el-button 
+                  type="danger" 
+                  size="small" 
+                  text
+                  @click="removeCurrentArg(argIndex)"
+                  :icon="Delete"
+                />
+              </div>
+              <el-button 
+                type="primary" 
+                size="small" 
+                text
+                @click="addCurrentArg"
+                :icon="Plus"
+              >
+                添加参数
+              </el-button>
+            </div>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleMcpDialogClose">取消</el-button>
+          <el-button type="primary" @click="saveMcpServer">
+            {{ mcpEditIndex >= 0 ? '更新' : '添加' }}
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Edit } from '@element-plus/icons-vue'
-import type { ApplicationForm, ChatMessage } from '@/api/type/application'
+import { Edit, Plus, Delete } from '@element-plus/icons-vue'
+import type { ApplicationForm, ChatMessage, McpSetting, SseTransport, StdioTransport } from '@/api/type/application'
 import modelApi from '@/api/model'
 import applicationApi from '@/api/application'
 import AiChat from '@/components/ai-chat/index.vue'
@@ -393,12 +634,199 @@ const handleSendMessage = async (message: string) => {
     })
 }
 
+// MCP设置相关状态
+const sseServers = ref<SseTransport[]>([])
+const stdioServers = ref<StdioTransport[]>([])
+const mcpDialogVisible = ref(false)
+const currentMcpType = ref<'sse' | 'stdio'>('sse')
+const mcpEditIndex = ref(-1) // -1表示新增，>=0表示编辑
+const currentSseServer = ref<SseTransport>({
+  type: 'sse',
+  sseUrl: '',
+  header: {}
+})
+const currentStdioServer = ref<StdioTransport>({
+  type: 'stdio',
+  command: '',
+  args: []
+})
+const currentHeaderKeys = ref<Record<string, string>>({})
 
+// 计算属性
+const totalMcpServers = computed(() => sseServers.value.length + stdioServers.value.length)
+const allMcpServers = computed(() => [...sseServers.value, ...stdioServers.value])
+const mcpDialogTitle = computed(() => {
+  const typeText = currentMcpType.value === 'sse' ? 'SSE传输服务器' : 'STDIO传输服务器'
+  return mcpEditIndex.value >= 0 ? `编辑${typeText}` : `添加${typeText}`
+})
+
+// 初始化MCP设置数据
+const initMcpSetting = () => {
+  if (applicationInfo.value.mcpSetting) {
+    sseServers.value = applicationInfo.value.mcpSetting.sseServers || []
+    stdioServers.value = applicationInfo.value.mcpSetting.stdioServers || []
+  }
+}
+
+// 同步MCP设置到applicationInfo
+const syncMcpSetting = () => {
+  applicationInfo.value.mcpSetting = {
+    sseServers: sseServers.value.length > 0 ? sseServers.value : undefined,
+    stdioServers: stdioServers.value.length > 0 ? stdioServers.value : undefined
+  }
+}
+
+// 重置当前编辑的服务器
+const resetCurrentServer = () => {
+  currentSseServer.value = {
+    type: 'sse',
+    sseUrl: '',
+    header: {}
+  }
+  currentStdioServer.value = {
+    type: 'stdio',
+    command: '',
+    args: []
+  }
+  currentHeaderKeys.value = {}
+  mcpEditIndex.value = -1
+}
+
+// SSE服务器操作
+const addSseServer = () => {
+  resetCurrentServer()
+  currentMcpType.value = 'sse'
+  mcpDialogVisible.value = true
+}
+
+const editSseServer = (index: number) => {
+  mcpEditIndex.value = index
+  currentMcpType.value = 'sse'
+  const server = sseServers.value[index]
+  currentSseServer.value = JSON.parse(JSON.stringify(server))
+  
+  // 初始化header keys
+  currentHeaderKeys.value = {}
+  if (server.header) {
+    Object.keys(server.header).forEach(key => {
+      currentHeaderKeys.value[key] = key
+    })
+  }
+  
+  mcpDialogVisible.value = true
+}
+
+const removeSseServer = (index: number) => {
+  sseServers.value.splice(index, 1)
+  syncMcpSetting()
+}
+
+// STDIO服务器操作
+const addStdioServer = () => {
+  resetCurrentServer()
+  currentMcpType.value = 'stdio'
+  mcpDialogVisible.value = true
+}
+
+const editStdioServer = (index: number) => {
+  mcpEditIndex.value = index
+  currentMcpType.value = 'stdio'
+  const server = stdioServers.value[index]
+  currentStdioServer.value = JSON.parse(JSON.stringify(server))
+  mcpDialogVisible.value = true
+}
+
+const removeStdioServer = (index: number) => {
+  stdioServers.value.splice(index, 1)
+  syncMcpSetting()
+}
+
+// 当前编辑的Header操作
+const addCurrentHeader = () => {
+  const newKey = `header-${Date.now()}`
+  if (!currentSseServer.value.header) {
+    currentSseServer.value.header = {}
+  }
+  currentSseServer.value.header[newKey] = ''
+  currentHeaderKeys.value[newKey] = newKey
+}
+
+const removeCurrentHeader = (headerKey: string) => {
+  if (currentSseServer.value.header) {
+    delete currentSseServer.value.header[headerKey]
+  }
+  delete currentHeaderKeys.value[headerKey]
+}
+
+const updateCurrentHeaderKey = (oldKey: string, newKey: string) => {
+  if (!newKey || oldKey === newKey) return
+  
+  if (currentSseServer.value.header && currentSseServer.value.header[oldKey] !== undefined) {
+    const value = currentSseServer.value.header[oldKey]
+    delete currentSseServer.value.header[oldKey]
+    currentSseServer.value.header[newKey] = value
+    
+    delete currentHeaderKeys.value[oldKey]
+    currentHeaderKeys.value[newKey] = newKey
+  }
+}
+
+// 当前编辑的Args操作
+const addCurrentArg = () => {
+  if (!currentStdioServer.value.args) {
+    currentStdioServer.value.args = []
+  }
+  currentStdioServer.value.args.push('')
+}
+
+const removeCurrentArg = (argIndex: number) => {
+  if (currentStdioServer.value.args) {
+    currentStdioServer.value.args.splice(argIndex, 1)
+  }
+}
+
+// 保存MCP服务器
+const saveMcpServer = () => {
+  if (currentMcpType.value === 'sse') {
+    if (!currentSseServer.value.sseUrl) {
+      MsgError('请输入SSE URL')
+      return
+    }
+    
+    if (mcpEditIndex.value >= 0) {
+      sseServers.value[mcpEditIndex.value] = { ...currentSseServer.value }
+    } else {
+      sseServers.value.push({ ...currentSseServer.value })
+    }
+  } else {
+    if (!currentStdioServer.value.command) {
+      MsgError('请输入命令')
+      return
+    }
+    
+    if (mcpEditIndex.value >= 0) {
+      stdioServers.value[mcpEditIndex.value] = { ...currentStdioServer.value }
+    } else {
+      stdioServers.value.push({ ...currentStdioServer.value })
+    }
+  }
+  
+  syncMcpSetting()
+  mcpDialogVisible.value = false
+}
+
+// 关闭弹窗
+const handleMcpDialogClose = () => {
+  mcpDialogVisible.value = false
+  resetCurrentServer()
+}
 
 // 监听路由变化，重新加载数据
 watch(() => route.params.id, (newId) => {
   if (newId && newId !== 'new') {
-    loadApplicationData()
+    loadApplicationData().then(() => {
+      initMcpSetting()
+    })
   }
 }, { immediate: true })
 
@@ -610,5 +1038,179 @@ onMounted(() => {
 // 深度选择器样式
 :deep(.el-input__wrapper) {
   background-color: #fff;
+}
+
+// MCP设置样式
+.mcp-setting-form-item {
+  :deep(.el-form-item__label) {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-right: 0 !important;
+  }
+}
+
+.mcp-config-container {
+  width: 100%;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mcp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e4e7ed;
+  
+  .mcp-count {
+    font-size: 14px;
+    color: #606266;
+  }
+}
+
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: #909399;
+  
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+  
+  .empty-text {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: #606266;
+  }
+  
+  .empty-description {
+    font-size: 14px;
+  }
+}
+
+.mcp-server-list {
+  padding: 16px;
+}
+
+.mcp-server-card {
+  margin-bottom: 12px;
+  border: 1px solid #e4e7ed;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  .server-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .server-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      .server-type {
+        padding: 2px 8px;
+        font-size: 12px;
+        background: #f0f9ff;
+        color: #0369a1;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+      
+      .server-title {
+        font-weight: 500;
+        color: #303133;
+      }
+    }
+    
+    .server-actions {
+      display: flex;
+      gap: 8px;
+    }
+  }
+  
+  .server-summary {
+    padding: 8px 0;
+    
+    .summary-item {
+      display: flex;
+      margin-bottom: 4px;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+      
+      .label {
+        width: 60px;
+        font-size: 14px;
+        color: #909399;
+      }
+      
+      .value {
+        flex: 1;
+        font-size: 14px;
+        color: #606266;
+        word-break: break-all;
+      }
+    }
+  }
+}
+
+// Popover样式
+:deep(.mcp-add-popover) {
+  padding: 8px 0 !important;
+}
+
+.mcp-type-options {
+  .option-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 4px 8px;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: #f5f7fa;
+    }
+    
+    .option-content {
+      h6 {
+        margin: 0 0 4px 0;
+        font-size: 14px;
+        font-weight: 500;
+        color: #303133;
+      }
+      
+      p {
+        margin: 0;
+        font-size: 12px;
+        color: #909399;
+        line-height: 1.4;
+      }
+    }
+  }
+}
+
+// 弹窗内的表单样式
+.header-config, .args-config {
+  .header-item, .arg-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    
+    .header-key, .header-value, .arg-input {
+      flex: 1;
+    }
+    
+    .header-key {
+      max-width: 150px;
+    }
+  }
 }
 </style>

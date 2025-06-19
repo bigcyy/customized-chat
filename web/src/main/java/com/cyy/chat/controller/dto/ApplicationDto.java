@@ -1,5 +1,6 @@
 package com.cyy.chat.controller.dto;
 
+import com.cyy.chat.model.McpSetting;
 import com.cyy.chat.model.ModelSetting;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -60,4 +61,7 @@ public class ApplicationDto {
 
     @Schema(description = "{	    \"top_n\": \"返回结果数量\",	    \"similarity\": \"相似度阈值\",	    \"search_mode\": \"搜索模式\",	    \"no_references_setting\": {	      \"value\": \"无文献默认值\",	      \"status\": \"无文献状态\"	    },	    \"max_paragraph_char_number\": \"段落最大字符数\"	  }")
     private String datasetSetting;
+
+    @Schema(description = "MCP 服务配置")
+    private McpSetting mcpSetting;
 }

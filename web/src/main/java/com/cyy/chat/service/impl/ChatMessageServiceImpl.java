@@ -19,7 +19,6 @@ import com.cyy.chat.utils.RoleTypeAdaptor;
 import com.cyy.common.exception.ApplicationNoModelConfigException;
 import com.cyy.common.exception.SystemGlobalException;
 import com.cyy.common.utils.SnowFlakeIdGenerator;
-import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessageType;
 import dev.langchain4j.mcp.McpToolProvider;
@@ -28,16 +27,13 @@ import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.McpTransport;
 import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
-import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
-import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
-import dev.langchain4j.service.tool.ToolExecution;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -164,7 +160,15 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
                     sink.tryEmitNext(res);
                     sink.tryEmitComplete();
                 })
-                .onError(sink::tryEmitError)
+                .onError(err ->{
+                    AiResponseVO errResp = AiResponseVO.builder()
+                            .message(err.getMessage())
+                            .isError(true)
+                            .isEnd(true)
+                            .build();
+                    sink.tryEmitNext(errResp);
+                    sink.tryEmitComplete();
+                })
                 .start();
 
         return sink.asFlux();

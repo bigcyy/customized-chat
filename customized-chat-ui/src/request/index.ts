@@ -220,7 +220,12 @@ export const postSSEStream = (
               try {
                 // 尝试解析为JSON
                 const jsonChunk: AiResponseVO = JSON.parse(dataContent)
-                onMessage?.(jsonChunk)
+                if(jsonChunk.isError){
+                  onError?.(jsonChunk)
+                  return
+                }else{
+                  onMessage?.(jsonChunk)
+                }
               } catch {
                 // 不是JSON
                 console.log("not json", dataContent)
@@ -231,9 +236,11 @@ export const postSSEStream = (
         // 继续读取
         readStream()
       }).catch(error => {
-        if (error.name !== 'AbortError') {
-          onError?.(error)
-        }
+        onError?.({
+          isError: true,
+          isEnd: true,
+          message: error.message
+        })
       })
     }
     

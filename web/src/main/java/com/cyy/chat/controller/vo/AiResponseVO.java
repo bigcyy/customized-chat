@@ -26,6 +26,8 @@ public class AiResponseVO {
     @Schema(description = "是否流式输出结束")
     @Builder.Default
     private Boolean isEnd = false;
+    @Builder.Default
+    private Boolean isError = false;
     @Schema(description = "工具调用响应")
     private ToolExecutionResp toolExecution;
 

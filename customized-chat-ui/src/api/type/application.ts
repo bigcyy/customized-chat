@@ -1,4 +1,5 @@
 import type { ModelConfig } from "./model"
+import type { ToolExecution } from "@/request/Result"
 
 interface ApplicationForm {
   id?: number
@@ -64,6 +65,7 @@ interface ChatMessage {
   loading?: boolean,
   isError?: boolean,
   role: 'user' | 'assistant'
+  toolExecutions?: ToolExecution[]
 }
 
 /**

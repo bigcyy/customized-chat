@@ -26,10 +26,12 @@
         <div v-else class="ai-message">
           <UserAvater name="icon-robot" class="ai-avatar" />
           <div class="message-content">
+            <!-- 使用增强版markdown渲染器，支持工具调用 -->
             <MdRenderer 
-              v-if="message.messageText"
               :source="message.messageText"
+              :tool-executions="message.toolExecutions"
             />
+            
             <div v-if="message.loading" class="loading-indicator">
               <el-icon class="is-loading">
                 <Loading />
@@ -71,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, ref, nextTick, defineEmits, reactive, watch, computed } from 'vue'
+import { defineProps, ref, nextTick, defineEmits } from 'vue'
 import { Loading, Right } from '@element-plus/icons-vue'
 import UserAvater from '@/components/avaters/user-avater.vue'
 import MdRenderer from '@/components/markdown/MdRenderer.vue'

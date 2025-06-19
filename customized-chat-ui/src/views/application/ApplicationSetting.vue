@@ -592,6 +592,9 @@ const handleSendMessage = async (message: string) => {
     return
   }
 
+  // 获取历史消息
+  const chatHistories = chatMessages.value.filter(item => !item.isError && !item.loading)
+
   // 添加用户消息
   const userMessage: ChatMessage = {
     sessionId: tempSessionId.value,
@@ -607,7 +610,8 @@ const handleSendMessage = async (message: string) => {
     messageIndex: chatMessages.value.length,
     role: 'assistant',
     messageText: '',
-    loading: true
+    loading: true,
+    toolExecutions: []  // 初始化工具调用数组
   })
   chatMessages.value.push(aiMessage)
   aiChatRef.value.scrollToBottom()
@@ -617,20 +621,37 @@ const handleSendMessage = async (message: string) => {
   applicationApi.postTempChatMessageStream(tempSessionId.value, {
     application: applicationInfo.value,
     chatMessage: userMessage,
-    chatHistories: chatMessages.value.filter(item => !item.isError)
+    chatHistories: chatHistories
     },
      (data) => { 
       aiMessage.loading = false
-      console.log(data)
-      aiMessage.messageText = aiMessage.messageText + data
+      aiMessage.messageText = aiMessage.messageText + (data.message || '')
+      
+      // 处理工具调用
+      if(data.toolExecution){
+        if (!aiMessage.toolExecutions) {
+          aiMessage.toolExecutions = []
+        }
+        // 检查是否已存在相同ID的工具调用，如果存在则更新，否则添加
+        const existingIndex = aiMessage.toolExecutions.findIndex(te => te.request.id === data.toolExecution!.request.id)
+        if (existingIndex >= 0) {
+          aiMessage.toolExecutions[existingIndex] = data.toolExecution
+        } else {
+          aiMessage.toolExecutions.push(data.toolExecution)
+        }
+        console.log('工具调用:', data.toolExecution)
+      }
+      
+      if(data.isEnd){
+        // 记录 token
+      }
       aiChatRef.value.scrollToBottom()
     },
      (err) => { 
       console.log(err)
       writeErrMessage(err, chatMessages.value[chatMessages.value.length - 1])
      }, () => { 
-      console.log('完成')
-      isLoading.value = false
+      isMessageSending.value = false
     })
 }
 

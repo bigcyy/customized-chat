@@ -1,12 +1,14 @@
 package com.cyy.chat.service.impl;
 
 import com.cyy.chat.controller.dto.ApplicationDto;
+import com.cyy.chat.controller.vo.AiResponseVO;
 import com.cyy.chat.memory.JdbcMemoryRepository;
 import com.cyy.chat.memory.PersistentMessageWindowChatMemory;
 import com.cyy.chat.model.Application;
 import com.cyy.chat.model.ChatMessage;
 import com.cyy.chat.dao.ChatMessageMapper;
 import com.cyy.chat.model.ChatSession;
+import com.cyy.chat.model.McpSetting;
 import com.cyy.chat.model.Model;
 import com.cyy.chat.provider.ModelFactory;
 import com.cyy.chat.service.Agent;
@@ -16,8 +18,16 @@ import com.cyy.chat.service.IModelService;
 import com.cyy.chat.utils.RoleTypeAdaptor;
 import com.cyy.common.exception.ApplicationNoModelConfigException;
 import com.cyy.common.exception.SystemGlobalException;
+import com.cyy.common.utils.SnowFlakeIdGenerator;
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessageType;
+import dev.langchain4j.mcp.McpToolProvider;
+import dev.langchain4j.mcp.client.DefaultMcpClient;
+import dev.langchain4j.mcp.client.McpClient;
+import dev.langchain4j.mcp.client.transport.McpTransport;
+import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
+import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
@@ -30,6 +40,7 @@ import dev.langchain4j.service.TokenStream;
 import dev.langchain4j.service.tool.ToolExecution;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 
@@ -90,10 +101,19 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
     }
 
     @Override
-    public Flux<String> tempChat(ApplicationDto application, ChatSession chatSession, ChatMessage userMessage, List<ChatMessage> chatHistories) {
+    public Flux<AiResponseVO> tempChat(ApplicationDto application, ChatSession chatSession, ChatMessage userMessage, List<ChatMessage> chatHistories) {
 
         // 获取应用对应的模型信息
         StreamingChatModel chatModel = buildStreamingChatModel(application.getModelId());
+
+        // 获取 mcp clients
+        List<McpClient> mcpClients = toMcpClients(application.getMcpSetting());
+
+        // 构建 tool provider
+        McpToolProvider mcpToolProvider = new McpToolProvider.Builder()
+                .mcpClients(mcpClients)
+                .build();
+
         // 封装记忆
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
                 .maxMessages(4)
@@ -108,13 +128,42 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
         Agent agent = AiServices.builder(Agent.class)
                 .streamingChatModel(chatModel)
                 .chatMemory(chatMemory)
+                .toolProvider(mcpToolProvider)
                 .build();
 
-        Sinks.Many<String> sink = Sinks.many().unicast().onBackpressureBuffer();
+        Sinks.Many<AiResponseVO> sink = Sinks.many().unicast().onBackpressureBuffer();
 
         agent.chat(userMessage.getMessageText())
-                .onPartialResponse(sink::tryEmitNext)
-                .onCompleteResponse(aiMessageResponse -> sink.tryEmitComplete())
+                .onPartialResponse(item -> {
+                    AiResponseVO res = AiResponseVO.builder()
+                            .message(item)
+                            .build();
+                    sink.tryEmitNext(res);
+                })
+                .onToolExecuted(toolExecution -> {
+                    AiResponseVO.ToolExecutionReq req = AiResponseVO.ToolExecutionReq.builder()
+                            .id(toolExecution.request().id())
+                            .name(toolExecution.request().name())
+                            .arguments(toolExecution.request().arguments())
+                            .build();
+
+                    AiResponseVO.ToolExecutionResp resp = AiResponseVO.ToolExecutionResp.builder()
+                            .request(req)
+                            .result(toolExecution.result())
+                            .build();
+
+                    AiResponseVO res = AiResponseVO.builder()
+                            .toolExecution(resp)
+                            .build();
+                    sink.tryEmitNext(res);
+                })
+                .onCompleteResponse(aiMessageResponse -> {
+                    AiResponseVO res = AiResponseVO.builder()
+                            .isEnd(true)
+                            .build();
+                    sink.tryEmitNext(res);
+                    sink.tryEmitComplete();
+                })
                 .onError(sink::tryEmitError)
                 .start();
 
@@ -144,17 +193,13 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
             throw new SystemGlobalException("消息为空");
         }
         ChatMessageType type = RoleTypeAdaptor.getMsgType(message.getRole());
-        switch (type) {
-            case USER:
-                return new UserMessage(message.getMessageText());
-            case AI:
-                return new AiMessage(message.getMessageText());
-            case SYSTEM:
-                return new SystemMessage(message.getMessageText());
+        return switch (type) {
+            case USER -> new UserMessage(message.getMessageText());
+            case AI -> new AiMessage(message.getMessageText());
+            case SYSTEM -> new SystemMessage(message.getMessageText());
             // 添加其他消息类型的映射，例如 TOOL_EXECUTION_RESULT, TOOL_EXECUTION_REQUEST 等
-            default:
-                throw new IllegalArgumentException("Unsupported chat message role: " + message.getRole());
-        }
+            default -> throw new IllegalArgumentException("Unsupported chat message role: " + message.getRole());
+        };
     }
 
     /**
@@ -165,6 +210,67 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
     private List<dev.langchain4j.data.message.ChatMessage> toLangChainMessageList(List<ChatMessage> messages){
         messages = messages == null ? new ArrayList<>() : messages;
         return messages.stream().map(this::toLangChainMessage).collect(Collectors.toList());
+    }
+
+    private List<McpClient> toMcpClients(McpSetting mcpSetting){
+        List<McpTransport> mcpTransports = toMcpTransports(mcpSetting);
+        return toMcpClients(mcpTransports);
+    }
+
+    private List<McpClient> toMcpClients(List<McpTransport> mcpTransports){
+        mcpTransports = mcpTransports == null ? new ArrayList<>() : mcpTransports;
+        return mcpTransports.stream()
+                .map(transport -> this.toMcpClient(transport, String.valueOf(SnowFlakeIdGenerator.generateId())))
+                .collect(Collectors.toList());
+    }
+
+    private McpClient toMcpClient(McpTransport mcpTransport ,String key){
+        return new DefaultMcpClient.Builder()
+                .key(key)
+                .transport(mcpTransport)
+                .build();
+    }
+
+    private List<McpTransport> toMcpTransports(McpSetting mcpSetting){
+        if(mcpSetting == null) return List.of();
+        List<McpTransport> transports = new ArrayList<>();
+        if(mcpSetting.getSseServers() != null){
+            // todo url应该要求为非空
+            // todo 考虑超时设置
+            // todo 考虑请求头
+            transports.addAll(mcpSetting.getSseServers()
+                    .stream()
+                    .map(conf -> new HttpMcpTransport.Builder()
+                            .sseUrl(conf.getSseUrl())
+                            .logRequests(true)
+                            .logResponses(true)
+                            .build())
+                    .toList());
+        }
+        if(mcpSetting.getStdioServers() != null){
+            transports.addAll(mcpSetting.getStdioServers()
+                    .stream()
+                    .map(conf -> new StdioMcpTransport.Builder()
+                            .command(toCommandList(conf))
+                            .logEvents(true)
+                            .build())
+                    .toList());
+        }
+        return transports;
+    }
+
+    private List<String> toCommandList(McpSetting.StdioTransport stdioTransport){
+        Assert.notNull(stdioTransport,"stdioTransport 不能为空");
+        Assert.hasText(stdioTransport.getCommand()," command 不能为空");
+        List<String> cmd = new ArrayList<>();
+        cmd.add(stdioTransport.getCommand());
+        if(stdioTransport.getArgs() != null){
+            stdioTransport.getArgs()
+                    .stream()
+                    .filter(arg -> arg != null && !arg.isEmpty())
+                    .forEach(cmd::add);
+        }
+        return cmd;
     }
 
 }

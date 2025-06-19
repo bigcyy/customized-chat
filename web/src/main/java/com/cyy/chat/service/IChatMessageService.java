@@ -1,6 +1,7 @@
 package com.cyy.chat.service;
 
 import com.cyy.chat.controller.dto.ApplicationDto;
+import com.cyy.chat.controller.vo.AiResponseVO;
 import com.cyy.chat.model.Application;
 import com.cyy.chat.model.ChatMessage;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -19,5 +20,5 @@ import java.util.List;
  */
 public interface IChatMessageService extends IService<ChatMessage> {
     Flux<String> chat(Application application, ChatSession chatSession, ChatMessage userMessage);
-    Flux<String> tempChat(ApplicationDto application, ChatSession chatSession, ChatMessage userMessage, List<ChatMessage> chatHistories);
+    Flux<AiResponseVO> tempChat(ApplicationDto application, ChatSession chatSession, ChatMessage userMessage, List<ChatMessage> chatHistories);
 }

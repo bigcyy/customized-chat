@@ -25,4 +25,33 @@ export interface Page<T> {
   current: number
 }
 
+/**
+ * 封装 ai 的流式响应
+ */
+export interface AiResponseVO {
+  /** 这一段响应的 id */
+  chunkId: number;
+  /** 这一段响应所属的会话 id */
+  sessionId?: number;
+  /** 这一段响应所属的消息 id */
+  messageId?: number;
+  /** 响应的内容 */
+  message?: string;
+  /** 是否为最后一段 */
+  isEnd?: boolean;
+  /** 响应的工具调用内容 */
+  toolExecution?: ToolExecution;
+}
+
+export interface ToolExecution {
+  request: ToolExecutionRequest;
+  result: string;
+}
+
+export interface ToolExecutionRequest {
+  id: string;
+  name: string;
+  arguments: string;
+}
+
 export default Result

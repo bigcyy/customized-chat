@@ -3,7 +3,7 @@ import { MsgError } from '@/utils/message'
 import type { NProgress } from 'nprogress'
 import type { Ref } from 'vue'
 import { ref, type WritableComputedRef } from 'vue'
-import Result from './Result'
+import { Result, type AiResponseVO } from './Result'
 
 const axiosApiPrefix = '/api/api/v1'
 
@@ -161,7 +161,7 @@ export const del: (
 export const postSSEStream = (
   url: string,
   data?: unknown,
-  onMessage?: (data: string) => void,
+  onMessage?: (data: AiResponseVO) => void,
   onError?: (error: any) => void,
   onComplete?: () => void
 ): {
@@ -204,7 +204,6 @@ export const postSSEStream = (
         
         // 解码数据
         let chunk = decoder.decode(value, { stream: true })
-        console.log("readStream chunk", chunk)
         tempResult = tempResult + chunk
         let split = tempResult.match(/data:.*}\n\n/g)
         if(split){
@@ -219,16 +218,12 @@ export const postSSEStream = (
             for (const index in split) {
               const dataContent = split[index].replace('data:', '').trim()
               try {
-                // 尝试解析为JSON（临时聊天格式）
-                const jsonChunk = JSON.parse(dataContent)
-                if (jsonChunk.message) {
-                  onMessage?.(jsonChunk.message)
-                } else {
-                  onMessage?.(dataContent)
-                }
+                // 尝试解析为JSON
+                const jsonChunk: AiResponseVO = JSON.parse(dataContent)
+                onMessage?.(jsonChunk)
               } catch {
-                // 如果不是JSON，直接使用内容（正式聊天格式）
-                onMessage?.(dataContent)
+                // 不是JSON
+                console.log("not json", dataContent)
               }
             }
           }

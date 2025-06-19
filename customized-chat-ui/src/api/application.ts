@@ -1,4 +1,4 @@
-import { Result, type Page } from '@/request/Result'
+import { Result, type AiResponseVO, type Page } from '@/request/Result'
 import type { Ref } from 'vue'
 import { get, post, put, del, postSSEStream } from '@/request'
 import type { ApplicationForm, TempChatDto } from '@/api/type/application'
@@ -53,7 +53,7 @@ const openTempChat: () => Promise<Result<any>> = () => {
 const postTempChatMessageStream = (
   sessionId: number | undefined,
   data: TempChatDto,
-  onMessage?: (data: string) => void,
+  onMessage?: (data: AiResponseVO) => void,
   onError?: (error: any) => void,
   onComplete?: () => void
 ) : {

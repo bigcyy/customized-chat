@@ -3,13 +3,15 @@ package com.cyy.chat.service.impl;
 import com.cyy.chat.controller.dto.ApplicationDto;
 import com.cyy.chat.controller.vo.AiResponseVO;
 import com.cyy.chat.memory.JdbcMemoryRepository;
-import com.cyy.chat.memory.PersistentMessageWindowChatMemory;
 import com.cyy.chat.model.Application;
 import com.cyy.chat.model.ChatMessage;
 import com.cyy.chat.dao.ChatMessageMapper;
 import com.cyy.chat.model.ChatSession;
 import com.cyy.chat.model.McpSetting;
 import com.cyy.chat.model.Model;
+import com.cyy.chat.model.ModelSetting;
+import com.cyy.chat.model.ToolExecutionReq;
+import com.cyy.chat.model.ToolExecutionDetail;
 import com.cyy.chat.provider.ModelFactory;
 import com.cyy.chat.service.Agent;
 import com.cyy.chat.service.IChatMessageService;
@@ -19,6 +21,8 @@ import com.cyy.chat.utils.RoleTypeAdaptor;
 import com.cyy.common.exception.ApplicationNoModelConfigException;
 import com.cyy.common.exception.SystemGlobalException;
 import com.cyy.common.utils.SnowFlakeIdGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessageType;
 import dev.langchain4j.mcp.McpToolProvider;
@@ -29,12 +33,12 @@ import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.TokenStream;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
@@ -53,11 +57,9 @@ import java.util.stream.Collectors;
  * @author CYY
  * @since 2025-03-14
  */
+@Slf4j
 @Service
 public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatMessage> implements IChatMessageService {
-
-    @Resource
-    private ChatMessageMapper chatMessageMapper;
 
     @Resource
     private IModelService modelService;
@@ -69,29 +71,79 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
     private JdbcMemoryRepository jdbcMemoryRepository;
 
     @Override
-    public Flux<String> chat(Application application, ChatSession chatSession, ChatMessage userMessage) {
+    public Flux<AiResponseVO> chat(Application application, ChatSession chatSession, ChatMessage userMessage) {
         // 保存当前信息
         StreamingChatModel chatModel = buildStreamingChatModel(application.getModelId());
 
-        ChatMemory chatMemory = PersistentMessageWindowChatMemory
-                .builder()
-                .id(chatSession.getId())
-                .maxMessages(4)
-                .chatMemoryStore(jdbcMemoryRepository)
+        McpSetting mcpSetting;
+        ModelSetting modelSetting;
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            mcpSetting = objectMapper.readValue(application.getMcpSetting(), McpSetting.class);
+            modelSetting = objectMapper.readValue(application.getMcpSetting(), ModelSetting.class);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse MCP setting: {}", application.getMcpSetting(), e);
+            throw new SystemGlobalException("Failed to parse application setting: " + application.getMcpSetting());
+        }
+
+        // 获取 mcp clients
+        List<McpClient> mcpClients = toMcpClients(mcpSetting);
+
+        // 构建 tool provider
+        McpToolProvider mcpToolProvider = new McpToolProvider.Builder()
+                .mcpClients(mcpClients)
                 .build();
+
+        ChatMemoryProvider memoryProvider = id -> {
+            if (id == null) {
+                throw new SystemGlobalException("Chat memory ID cannot be null");
+            }
+            return MessageWindowChatMemory.builder()
+                    .maxMessages(modelSetting.getChatMemory() == null ? 10 : modelSetting.getChatMemory())
+                    .chatMemoryStore(jdbcMemoryRepository)
+                    .id(id)
+                    .build();
+        };
 
         Agent agent = AiServices.builder(Agent.class)
                 .streamingChatModel(chatModel)
-                .chatMemory(chatMemory)
+                .chatMemoryProvider(memoryProvider)
+                .toolProvider(mcpToolProvider)
                 .build();
 
-        Sinks.Many<String> sink = Sinks.many().unicast().onBackpressureBuffer();
+        Sinks.Many<AiResponseVO> sink = Sinks.many().unicast().onBackpressureBuffer();
 
-        TokenStream tokenStream = agent.chat(userMessage.getMessageText());
-        tokenStream.onPartialResponse(sink::tryEmitNext)
-            .onCompleteResponse(aiMessageResponse -> sink.tryEmitComplete())
-            .onError(sink::tryEmitError)
-            .start();
+        agent.chat(chatSession.getId(), userMessage.getMessageText())
+                .onPartialResponse(item -> {
+                    AiResponseVO res = AiResponseVO.builder()
+                            .message(item)
+                            .build();
+                    sink.tryEmitNext(res);
+                })
+                .onToolExecuted(toolExecution -> {
+                    ToolExecutionDetail executionDetail = ToolExecutionDetail.from(toolExecution);
+                    AiResponseVO res = AiResponseVO.builder()
+                            .toolExecutionDetail(executionDetail)
+                            .build();
+                    sink.tryEmitNext(res);
+                })
+                .onCompleteResponse(aiMessageResponse -> {
+                    AiResponseVO res = AiResponseVO.builder()
+                            .isEnd(true)
+                            .build();
+                    sink.tryEmitNext(res);
+                    sink.tryEmitComplete();
+                })
+                .onError(err ->{
+                    AiResponseVO errResp = AiResponseVO.builder()
+                            .message(err.getMessage())
+                            .isError(true)
+                            .isEnd(true)
+                            .build();
+                    sink.tryEmitNext(errResp);
+                    sink.tryEmitComplete();
+                })
+                .start();
 
         return sink.asFlux();
     }
@@ -110,26 +162,31 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
                 .mcpClients(mcpClients)
                 .build();
 
-        // 封装记忆
-        MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
-                .maxMessages(4)
-                .id(chatSession.getId())
-                .build();
+        ChatMemoryProvider memoryProvider = id -> {
+            if (id == null) {
+                throw new SystemGlobalException("Chat memory ID cannot be null");
+            }
+            return MessageWindowChatMemory.builder()
+                    .maxMessages(application.getModelSetting().getChatMemory() == null ? 10 : application.getModelSetting().getChatMemory())
+                    .id(id)
+                    .build();
+        };
 
+        // todo 从 memory 缓存中读
         if(chatHistories != null && !chatHistories.isEmpty()){
             chatHistories.sort(Comparator.comparing(ChatMessage::getMessageIndex));
-            toLangChainMessageList(chatHistories).forEach(chatMemory::add);
+            toLangChainMessageList(chatHistories).forEach(memoryProvider.get(chatSession.getId())::add);
         }
 
         Agent agent = AiServices.builder(Agent.class)
                 .streamingChatModel(chatModel)
-                .chatMemory(chatMemory)
+                .chatMemoryProvider(memoryProvider)
                 .toolProvider(mcpToolProvider)
                 .build();
 
         Sinks.Many<AiResponseVO> sink = Sinks.many().unicast().onBackpressureBuffer();
 
-        agent.chat(userMessage.getMessageText())
+        agent.chat(userMessage.getSessionId(), userMessage.getMessageText())
                 .onPartialResponse(item -> {
                     AiResponseVO res = AiResponseVO.builder()
                             .message(item)
@@ -137,19 +194,9 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
                     sink.tryEmitNext(res);
                 })
                 .onToolExecuted(toolExecution -> {
-                    AiResponseVO.ToolExecutionReq req = AiResponseVO.ToolExecutionReq.builder()
-                            .id(toolExecution.request().id())
-                            .name(toolExecution.request().name())
-                            .arguments(toolExecution.request().arguments())
-                            .build();
-
-                    AiResponseVO.ToolExecutionResp resp = AiResponseVO.ToolExecutionResp.builder()
-                            .request(req)
-                            .result(toolExecution.result())
-                            .build();
-
+                    ToolExecutionDetail executionDetail = ToolExecutionDetail.from(toolExecution);
                     AiResponseVO res = AiResponseVO.builder()
-                            .toolExecution(resp)
+                            .toolExecutionDetail(executionDetail)
                             .build();
                     sink.tryEmitNext(res);
                 })

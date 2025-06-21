@@ -49,7 +49,7 @@ public class ChatMessageController {
      */
     @PostMapping(value = "/application/{applicationId}/chat/session/{sessionId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "应用聊天")
-    public Flux<Map<String,String>> chat(@PathVariable Long applicationId, @PathVariable Long sessionId, @RequestBody ChatMessage userMessage){
+    public Flux<AiResponseVO> chat(@PathVariable Long applicationId, @PathVariable Long sessionId, @RequestBody ChatMessage userMessage){
         // 检查应用 id
         Application application = applicationService.getById(applicationId);
         if(application == null){
@@ -65,7 +65,6 @@ public class ChatMessageController {
             throw new ClientGlobalException("会话不存在");
         }
         // 执行聊天
-        return chatMessageService.chat(application, chatSession, userMessage)
-                .map(message -> Map.of("message", message));
+        return chatMessageService.chat(application, chatSession, userMessage);
     }
 }

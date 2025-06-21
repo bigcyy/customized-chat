@@ -16,4 +16,15 @@
             WHERE
                 session_id = #{sessionId})
     </select>
+    
+    <select id="getChatMessageListBySessionId" resultType="com.cyy.chat.model.ChatMessage">
+        SELECT
+            *
+        FROM
+            chat_message cm
+        WHERE
+            cm.session_id = #{sessionId}
+        ORDER BY
+            cm.message_index ASC
+    </select>
 </mapper>

@@ -47,4 +47,10 @@ public class ChatMessage implements Serializable {
     private LocalDateTime createTime;
 
     private String role;
+
+    @Schema(description = "工具执行响应的 JSON 字符串")
+    private String toolExecutionResp;
+
+    @Schema(description = "对于 ai 可能会有工具执行请求列表 JSON")
+    private String toolExecutionReqs;
 }

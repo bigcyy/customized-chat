@@ -19,6 +19,6 @@ import java.util.List;
  * @since 2025-03-14
  */
 public interface IChatMessageService extends IService<ChatMessage> {
-    Flux<String> chat(Application application, ChatSession chatSession, ChatMessage userMessage);
+    Flux<AiResponseVO> chat(Application application, ChatSession chatSession, ChatMessage userMessage);
     Flux<AiResponseVO> tempChat(ApplicationDto application, ChatSession chatSession, ChatMessage userMessage, List<ChatMessage> chatHistories);
 }

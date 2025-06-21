@@ -628,18 +628,18 @@ const handleSendMessage = async (message: string) => {
       aiMessage.messageText = aiMessage.messageText + (data.message || '')
       
       // 处理工具调用
-      if(data.toolExecution){
-        if (!aiMessage.toolExecutions) {
-          aiMessage.toolExecutions = []
+      if(data.toolExecutionDetail){
+        if (!aiMessage.toolExecutionDetail) {
+          aiMessage.toolExecutionDetail = []
         }
         // 检查是否已存在相同ID的工具调用，如果存在则更新，否则添加
-        const existingIndex = aiMessage.toolExecutions.findIndex(te => te.request.id === data.toolExecution!.request.id)
+        const existingIndex = aiMessage.toolExecutionDetail.findIndex(te => te.request.id === data.toolExecutionDetail!.request.id)
         if (existingIndex >= 0) {
-          aiMessage.toolExecutions[existingIndex] = data.toolExecution
+          aiMessage.toolExecutionDetail[existingIndex] = data.toolExecutionDetail
         } else {
-          aiMessage.toolExecutions.push(data.toolExecution)
+          aiMessage.toolExecutionDetail.push(data.toolExecutionDetail)
         }
-        console.log('工具调用:', data.toolExecution)
+        console.log('工具调用:', data.toolExecutionDetail)
       }
       
       if(data.isEnd){

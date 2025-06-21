@@ -8,6 +8,7 @@ import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.service.memory.ChatMemoryService;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -20,6 +21,7 @@ import java.util.Optional;
  * 并在内存中维护一个滑动窗口，用于LLM上下文。
  * 启动时从 ChatMemoryStore 加载所有历史消息，然后应用滑动窗口。
  */
+@Slf4j
 public class PersistentMessageWindowChatMemory implements ChatMemory {
 
     private final Object id;

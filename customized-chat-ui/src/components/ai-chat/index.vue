@@ -29,7 +29,7 @@
             <!-- 使用增强版markdown渲染器，支持工具调用 -->
             <MdRenderer 
               :source="message.messageText"
-              :tool-executions="message.toolExecutions"
+              :tool-executions="message.toolExecutionDetail"
             />
             
             <div v-if="message.loading" class="loading-indicator">

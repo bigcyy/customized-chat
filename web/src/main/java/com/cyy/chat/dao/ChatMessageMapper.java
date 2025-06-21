@@ -3,6 +3,8 @@ package com.cyy.chat.dao;
 import com.cyy.chat.model.ChatMessage;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
+import java.util.List;
+
 
 /**
  * <p>
@@ -14,5 +16,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface ChatMessageMapper extends BaseMapper<ChatMessage> {
     ChatMessage getLastMessage(Long sessionId);
+
+    List<ChatMessage> getChatMessageListBySessionId(Long sessionId);
 }
 

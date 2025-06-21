@@ -232,7 +232,8 @@ const handleSendMessage = async (message: string) => {
     messageIndex: chatMessages.value.length,
     role: 'assistant',
     messageText: '',
-    loading: true
+    loading: true,
+    toolExecutions: [] 
   })
   chatMessages.value.push(aiMessage)
   aiChatRef.value.scrollToBottom()
@@ -245,8 +246,25 @@ const handleSendMessage = async (message: string) => {
     userMessage,
     (data) => {
       aiMessage.loading = false
-      console.log(data)
-      aiMessage.messageText = aiMessage.messageText + data
+      aiMessage.messageText = aiMessage.messageText + (data.message || '')
+      
+      // 处理工具调用
+      if(data.toolExecutionDetail){
+        if (!aiMessage.toolExecutionDetail) {
+          aiMessage.toolExecutionDetail = []
+        }
+        // 检查是否已存在相同ID的工具调用，如果存在则更新，否则添加
+        const existingIndex = aiMessage.toolExecutionDetail.findIndex(te => te.request.id === data.toolExecutionDetail!.request.id)
+        if (existingIndex >= 0) {
+          aiMessage.toolExecutionDetail[existingIndex] = data.toolExecutionDetail
+        } else {
+          aiMessage.toolExecutionDetail.push(data.toolExecutionDetail)
+        }
+      }
+      
+      if(data.isEnd){
+        // 记录 token
+      }
       aiChatRef.value.scrollToBottom()
     },
     (err) => {
@@ -306,6 +324,7 @@ const loadSessionMessages = async () => {
     // 调用API加载历史消息
     const response = await chatSessionApi.getSessionMessages(currentChatSession.value.id!, loadingMessages)
     chatMessages.value = response.data.messages || []
+    console.log(chatMessages.value)
   } catch (error) {
     console.error('加载会话消息失败:', error)
     // 如果加载失败

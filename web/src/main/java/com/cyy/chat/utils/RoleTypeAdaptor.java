@@ -1,31 +1,44 @@
 package com.cyy.chat.utils;
 
+import com.cyy.chat.model.MessageType;
 import dev.langchain4j.data.message.ChatMessageType;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.util.Assert;
 
 /**
  * 适配 Langchain4j 中的消息类型
- * todo 将消息类型字符串改为枚举类
  */
 public class RoleTypeAdaptor {
-    public static ChatMessageType getMsgType(String role) {
+    public static ChatMessageType getMsgType(@NotNull String role) {
         Assert.hasText(role, "role must not be empty");
-        if("assistant".equals(role)){
+        MessageType messageType = MessageType.valueOfRole(role);
+        return getMsgType(messageType);
+    }
+
+    public static ChatMessageType getMsgType(@NotNull MessageType msgType) {
+        if(msgType == MessageType.AI) {
             return ChatMessageType.AI;
-        } else if ("user".equals(role)) {
+        } else if(msgType == MessageType.USER) {
             return ChatMessageType.USER;
-        }else {
-            throw new IllegalArgumentException("unknown role: " + role);
+        } else if(msgType == MessageType.SYSTEM) {
+            return ChatMessageType.SYSTEM;
+        } else if(msgType == MessageType.TOOL_EXECUTION_RESULT) {
+            return ChatMessageType.TOOL_EXECUTION_RESULT;
+        } else {
+            throw new IllegalArgumentException("unknown msg type: " + msgType);
         }
     }
 
-    public static String getRole(ChatMessageType msgType) {
-        Assert.notNull(msgType, "msgType must not be null");
-        if(msgType == ChatMessageType.AI){
-            return "assistant";
-        }else if(msgType == ChatMessageType.USER){
-            return "user";
-        }else {
+    public static MessageType getRole(@NotNull ChatMessageType msgType) {
+        if (msgType == ChatMessageType.AI){
+            return MessageType.AI;
+        } else if(msgType == ChatMessageType.USER){
+            return MessageType.USER;
+        } else if(msgType == ChatMessageType.SYSTEM){
+            return MessageType.SYSTEM;
+        } else if(msgType == ChatMessageType.TOOL_EXECUTION_RESULT) {
+            return MessageType.TOOL_EXECUTION_RESULT;
+        } else {
             throw new IllegalArgumentException("unknown msgType: " + msgType);
         }
     }

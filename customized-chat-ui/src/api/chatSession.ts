@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import { Result } from '@/request/Result'
+import { Result, type AiResponseVO } from '@/request/Result'
 import { get, post, del, postSSEStream } from '@/request'
 import type { ChatMessage, ChatSession } from '@/api/type/application'
 
@@ -66,7 +66,7 @@ const postChatMessageStream = (
   applicationId: number,
   sessionId: number,
   userMessage: ChatMessage,
-  onMessage?: (data: string) => void,
+  onMessage?: (data: AiResponseVO) => void,
   onError?: (error: any) => void,
   onComplete?: () => void
 ) : {

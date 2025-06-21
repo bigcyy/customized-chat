@@ -7,6 +7,7 @@ public class SystemGlobalException extends GlobalException{
         super(ErrorCode.SYSTEM_ERROR);
     }
 
+    // todo 需要追踪堆栈
     public SystemGlobalException(String errorMsg) {
         super(ErrorCode.SYSTEM_ERROR, errorMsg);
     }

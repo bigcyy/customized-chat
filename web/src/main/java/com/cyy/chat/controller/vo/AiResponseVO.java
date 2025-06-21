@@ -1,5 +1,6 @@
 package com.cyy.chat.controller.vo;
 
+import com.cyy.chat.model.ToolExecutionDetail;
 import com.cyy.common.utils.SnowFlakeIdGenerator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -29,33 +30,5 @@ public class AiResponseVO {
     @Builder.Default
     private Boolean isError = false;
     @Schema(description = "工具调用响应")
-    private ToolExecutionResp toolExecution;
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Schema(description = "封装工具调用的响应，包括工具调用请求和响应的结果")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Builder
-    public static class ToolExecutionResp{
-        @Schema(description = "工具调用请求")
-        private ToolExecutionReq request;
-        @Schema(description = "工具调用结果")
-        private String result;
-    }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Schema(description = "工具调用请求")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Builder
-    public static class ToolExecutionReq{
-        @Schema(description = "请求的 id")
-        private String id;
-        @Schema(description = "请求的 tool 名字")
-        private String name;
-        @Schema(description = "请求的指令")
-        private String arguments;
-    }
+    private ToolExecutionDetail toolExecutionDetail;
 }

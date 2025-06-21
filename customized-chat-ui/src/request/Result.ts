@@ -39,11 +39,12 @@ export interface AiResponseVO {
   message?: string;
   /** 是否为最后一段 */
   isEnd?: boolean;
+  isError?: boolean;
   /** 响应的工具调用内容 */
-  toolExecution?: ToolExecution;
+  toolExecutionDetail?: toolExecutionDetail;
 }
 
-export interface ToolExecution {
+export interface toolExecutionDetail {
   request: ToolExecutionRequest;
   result: string;
 }

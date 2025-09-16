@@ -21,6 +21,18 @@ const settingRouter = {
         parentName: 'setting'
       },
       component: () => import('@/views/model/index.vue')
+    },
+    {
+      path: '/setting/mcp',
+      name: 'mcp',
+      meta: {
+        title: 'MCP',
+        icon: 'mcp',
+        activeMenu: '/setting',
+        parentPath: '/setting',
+        parentName: 'setting'
+      },
+      component: () => import('@/views/mcp/index.vue')
     }
   ]
 }

@@ -3,9 +3,11 @@ package com.cyy.chat.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.cyy.chat.controller.dto.ApplicationDto;
 import com.cyy.chat.model.Application;
+import com.cyy.chat.model.McpServer;
 import com.cyy.chat.model.McpSetting;
 import com.cyy.chat.model.ModelSetting;
 import com.cyy.chat.service.IApplicationService;
+import com.cyy.chat.service.IMcpServerService;
 import com.cyy.common.converter.BeanConverter;
 import com.cyy.common.exception.ClientGlobalException;
 import com.cyy.common.utils.R;
@@ -39,6 +41,9 @@ public class ApplicationController {
     @Resource
     private IApplicationService applicationService;
 
+    @Resource
+    private IMcpServerService mcpServerService;
+
     @PostMapping
     public R add(@RequestBody ApplicationDto applicationDto) {
         Application app = BeanConverter
@@ -54,6 +59,7 @@ public class ApplicationController {
                 })
                 .convert();
         app.setApplicationType("Agent");
+        app.setMcpServerIds(applicationDto.getMcpServerIds());
         applicationService.save(app);
         return R.ok().data("id",app.getId());
     }
@@ -81,7 +87,6 @@ public class ApplicationController {
                 throw new ClientGlobalException("模型配置转换失败", e.getMessage());
             }
         }
-
         BeanUtils.copyProperties(applicationDto, application);
         applicationService.updateById(application);
         return R.ok();
@@ -116,7 +121,15 @@ public class ApplicationController {
                         throw new ClientGlobalException("mcp 配置转换失败", e.getMessage());
                     }
                 });
-        BeanUtils.copyProperties(application, applicationDto);
+        // 排除 mcpServerIds，因为我们需要单独处理
+        BeanUtils.copyProperties(application, applicationDto, "mcpServerIds");
+        // 单独设置MCP服务器ID列表，确保类型安全
+        List<Long> mcpServerIds = application.getMcpServerIds();
+        System.out.println("DEBUG GET: mcpServerIds type: " + (mcpServerIds != null ? mcpServerIds.getClass() : "null"));
+        if (mcpServerIds != null && !mcpServerIds.isEmpty()) {
+            System.out.println("DEBUG GET: first element type: " + mcpServerIds.get(0).getClass());
+        }
+        applicationDto.setMcpServerIds(mcpServerIds);
         return R.ok().data("application",applicationDto);
     }
 
@@ -133,11 +146,19 @@ public class ApplicationController {
         // page<entity> -> page<dto>
         List<ApplicationDto> applicationDtoList = page.getRecords().stream().map(item -> {
             ApplicationDto applicationDto = new ApplicationDto();
-            BeanUtils.copyProperties(item, applicationDto);
+            // 排除 mcpServerIds，因为我们需要单独处理
+            BeanUtils.copyProperties(item, applicationDto, "mcpServerIds");
             try {
                 if (item.getModelSetting() != null) {
                     applicationDto.setModelSetting(new ObjectMapper().readValue(item.getModelSetting(), ModelSetting.class));
                 }
+                // 单独设置MCP服务器ID列表，确保类型安全
+                List<Long> mcpServerIds = item.getMcpServerIds();
+                System.out.println("DEBUG: mcpServerIds type: " + (mcpServerIds != null ? mcpServerIds.getClass() : "null"));
+                if (mcpServerIds != null && !mcpServerIds.isEmpty()) {
+                    System.out.println("DEBUG: first element type: " + mcpServerIds.get(0).getClass());
+                }
+                applicationDto.setMcpServerIds(mcpServerIds);
                 return applicationDto;
             } catch (JsonProcessingException e) {
                 throw new ClientGlobalException("模型配置转换失败", e.getMessage());
@@ -149,4 +170,34 @@ public class ApplicationController {
 
         return R.ok().data("agents",dtoPage);
     }
+
+    @GetMapping("/{applicationId}/mcp-servers")
+    @Operation(summary = "获取应用关联的MCP服务器")
+    public R getApplicationMcpServers(@Parameter(description = "应用 id", example = "1") @PathVariable Long applicationId) {
+        Application application = applicationService.getById(applicationId);
+        if (application == null) {
+            throw new ClientGlobalException("应用不存在");
+        }
+        
+        List<McpServer> mcpServers = applicationService.getApplicationMcpServers(applicationId);
+        return R.ok().data("mcpServers", mcpServers);
+    }
+
+//    @PostMapping("/{applicationId}/mcp-servers")
+//    @Operation(summary = "为应用添加MCP服务器")
+//    public R addApplicationMcpServer(
+//            @Parameter(description = "应用 id", example = "1") @PathVariable Long applicationId,
+//            @RequestBody List<Long> mcpServerIds) {
+//        applicationService.updateApplicationMcpServers(applicationId, mcpServerIds);
+//        return R.ok();
+//    }
+//
+//    @DeleteMapping("/{applicationId}/mcp-servers/{mcpServerId}")
+//    @Operation(summary = "移除应用的MCP服务器关联")
+//    public R removeApplicationMcpServer(
+//            @Parameter(description = "应用 id", example = "1") @PathVariable Long applicationId,
+//            @Parameter(description = "MCP服务器 id", example = "1") @PathVariable Long mcpServerId) {
+//        applicationService.removeApplicationMcpServer(applicationId, mcpServerId);
+//        return R.ok();
+//    }
 }

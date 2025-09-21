@@ -1,9 +1,14 @@
 package com.cyy.chat.model;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.cyy.chat.config.handler.LongListJsonTypeHandler;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -19,6 +24,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @Schema(name = "Application", description = "")
+@TableName(autoResultMap = true)
 public class Application implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -72,4 +78,11 @@ public class Application implements Serializable {
 
     @Schema(description = "mcp 设置")
     private String mcpSetting;
+
+    /**
+     * 关联的MCP服务器ID列表
+     */
+    @Schema(description = "关联的MCP服务器ID列表")
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<Long> mcpServerIds;
 }

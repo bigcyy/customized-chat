@@ -6,7 +6,7 @@ milvus:
   ip: localhost
   port: 19530
 server:
-  port: 8081
+  port: 8091
 
 spring:
   datasource:
@@ -17,6 +17,7 @@ spring:
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/*.xml
+#  type-handlers-package: com.cyy.chat.config.handler
 
 springdoc:
   swagger-ui:

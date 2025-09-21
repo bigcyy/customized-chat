@@ -13,6 +13,7 @@ interface ApplicationForm {
   modelSetting?: ModelSetting
   datasetSetting?: string
   mcpSetting?: McpSetting
+  mcpServerIds?: number[]
 }
 
 /**

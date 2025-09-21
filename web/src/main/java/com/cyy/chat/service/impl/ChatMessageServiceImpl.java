@@ -7,6 +7,7 @@ import com.cyy.chat.model.Application;
 import com.cyy.chat.model.ChatMessage;
 import com.cyy.chat.dao.ChatMessageMapper;
 import com.cyy.chat.model.ChatSession;
+import com.cyy.chat.model.McpServer;
 import com.cyy.chat.model.McpSetting;
 import com.cyy.chat.model.Model;
 import com.cyy.chat.model.ModelSetting;
@@ -17,6 +18,7 @@ import com.cyy.chat.service.Agent;
 import com.cyy.chat.service.IChatMessageService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cyy.chat.service.IModelService;
+import com.cyy.chat.service.IMcpServerService;
 import com.cyy.chat.utils.RoleTypeAdaptor;
 import com.cyy.common.exception.ApplicationNoModelConfigException;
 import com.cyy.common.exception.SystemGlobalException;
@@ -70,24 +72,25 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
     @Resource
     private JdbcMemoryRepository jdbcMemoryRepository;
 
+    @Resource
+    private IMcpServerService mcpServerService;
+
     @Override
     public Flux<AiResponseVO> chat(Application application, ChatSession chatSession, ChatMessage userMessage) {
         // 保存当前信息
         StreamingChatModel chatModel = buildStreamingChatModel(application.getModelId());
 
-        McpSetting mcpSetting;
         ModelSetting modelSetting;
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            mcpSetting = objectMapper.readValue(application.getMcpSetting(), McpSetting.class);
-            modelSetting = objectMapper.readValue(application.getMcpSetting(), ModelSetting.class);
+            modelSetting = objectMapper.readValue(application.getModelSetting(), ModelSetting.class);
         } catch (JsonProcessingException e) {
-            log.error("Failed to parse MCP setting: {}", application.getMcpSetting(), e);
-            throw new SystemGlobalException("Failed to parse application setting: " + application.getMcpSetting());
+            log.error("Failed to parse model setting: {}", application.getModelSetting(), e);
+            throw new SystemGlobalException("Failed to parse model setting: " + application.getModelSetting());
         }
 
         // 获取 mcp clients
-        List<McpClient> mcpClients = toMcpClients(mcpSetting);
+        List<McpClient> mcpClients = buildMcpClientsFromServerIds(application.getMcpServerIds());
 
         // 构建 tool provider
         McpToolProvider mcpToolProvider = new McpToolProvider.Builder()
@@ -155,7 +158,7 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
         StreamingChatModel chatModel = buildStreamingChatModel(application.getModelId());
 
         // 获取 mcp clients
-        List<McpClient> mcpClients = toMcpClients(application.getMcpSetting());
+        List<McpClient> mcpClients = buildMcpClientsFromServerIds(application.getMcpServerIds());
 
         // 构建 tool provider
         McpToolProvider mcpToolProvider = new McpToolProvider.Builder()
@@ -263,11 +266,6 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
         return messages.stream().map(this::toLangChainMessage).collect(Collectors.toList());
     }
 
-    private List<McpClient> toMcpClients(McpSetting mcpSetting){
-        List<McpTransport> mcpTransports = toMcpTransports(mcpSetting);
-        return toMcpClients(mcpTransports);
-    }
-
     private List<McpClient> toMcpClients(List<McpTransport> mcpTransports){
         mcpTransports = mcpTransports == null ? new ArrayList<>() : mcpTransports;
         return mcpTransports.stream()
@@ -281,47 +279,81 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
                 .transport(mcpTransport)
                 .build();
     }
-
-    private List<McpTransport> toMcpTransports(McpSetting mcpSetting){
-        if(mcpSetting == null) return List.of();
-        List<McpTransport> transports = new ArrayList<>();
-        if(mcpSetting.getSseServers() != null){
-            // todo url应该要求为非空
-            // todo 考虑超时设置
-            // todo 考虑请求头
-            transports.addAll(mcpSetting.getSseServers()
-                    .stream()
-                    .map(conf -> new HttpMcpTransport.Builder()
-                            .sseUrl(conf.getSseUrl())
-                            .logRequests(true)
-                            .logResponses(true)
-                            .build())
-                    .toList());
+    /**
+     * 根据 MCP 服务器 ID 列表构建 MCP 客户端
+     * @param mcpServerIds MCP 服务器 ID 列表
+     * @return MCP 客户端列表
+     */
+    private List<McpClient> buildMcpClientsFromServerIds(List<Long> mcpServerIds) {
+        if (mcpServerIds == null || mcpServerIds.isEmpty()) {
+            return List.of();
         }
-        if(mcpSetting.getStdioServers() != null){
-            transports.addAll(mcpSetting.getStdioServers()
-                    .stream()
-                    .map(conf -> new StdioMcpTransport.Builder()
-                            .command(toCommandList(conf))
-                            .logEvents(true)
-                            .build())
-                    .toList());
+        
+        List<McpServer> mcpServers = mcpServerService.listByIds(mcpServerIds);
+        List<McpTransport> mcpTransports = toMcpTransportsFromServers(mcpServers);
+        return toMcpClients(mcpTransports);
+    }
+
+    /**
+     * 从 McpServer 列表转换为 McpTransport 列表
+     * @param mcpServers MCP 服务器列表
+     * @return MCP 传输层列表
+     */
+    private List<McpTransport> toMcpTransportsFromServers(List<McpServer> mcpServers) {
+        if (mcpServers == null || mcpServers.isEmpty()) {
+            return List.of();
+        }
+        
+        List<McpTransport> transports = new ArrayList<>();
+        for (McpServer server : mcpServers) {
+            if (!server.getEnabled() || server.getIsDeleted()) {
+                continue;
+            }
+            
+            McpTransport transport = createMcpTransportFromServer(server);
+            if (transport != null) {
+                transports.add(transport);
+            }
         }
         return transports;
     }
 
-    private List<String> toCommandList(McpSetting.StdioTransport stdioTransport){
-        Assert.notNull(stdioTransport,"stdioTransport 不能为空");
-        Assert.hasText(stdioTransport.getCommand()," command 不能为空");
-        List<String> cmd = new ArrayList<>();
-        cmd.add(stdioTransport.getCommand());
-        if(stdioTransport.getArgs() != null){
-            stdioTransport.getArgs()
-                    .stream()
-                    .filter(arg -> arg != null && !arg.isEmpty())
-                    .forEach(cmd::add);
+    /**
+     * 从单个 McpServer 创建 McpTransport
+     * @param server MCP 服务器
+     * @return MCP 传输层
+     */
+    private McpTransport createMcpTransportFromServer(McpServer server) {
+        if ("sse".equalsIgnoreCase(server.getType())) {
+            if (server.getSseUrl() == null || server.getSseUrl().trim().isEmpty()) {
+                log.warn("SSE URL is empty for server: {}", server.getServerName());
+                return null;
+            }
+            return new HttpMcpTransport.Builder()
+                    .sseUrl(server.getSseUrl())
+                    .logRequests(true)
+                    .logResponses(true)
+                    .build();
+        } else if ("stdio".equalsIgnoreCase(server.getType())) {
+            if (server.getCommand() == null || server.getCommand().trim().isEmpty()) {
+                log.warn("Command is empty for server: {}", server.getServerName());
+                return null;
+            }
+            List<String> cmd = new ArrayList<>();
+            cmd.add(server.getCommand());
+            if (server.getArgs() != null) {
+                server.getArgs().stream()
+                        .filter(arg -> arg != null && !arg.trim().isEmpty())
+                        .forEach(cmd::add);
+            }
+            return new StdioMcpTransport.Builder()
+                    .command(cmd)
+                    .logEvents(true)
+                    .build();
+        } else {
+            log.warn("Unknown transport type: {} for server: {}", server.getType(), server.getServerName());
+            return null;
         }
-        return cmd;
     }
 
 }

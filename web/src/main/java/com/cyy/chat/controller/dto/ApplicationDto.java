@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -64,4 +66,7 @@ public class ApplicationDto {
 
     @Schema(description = "MCP 服务配置")
     private McpSetting mcpSetting;
+
+    @Schema(description = "关联的MCP服务器ID列表")
+    private List<Long> mcpServerIds;
 }

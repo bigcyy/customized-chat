@@ -1,7 +1,8 @@
-import { Result, type AiResponseVO, type Page } from '@/request/Result'
+import { Result, type AiResponseVO } from '@/request/Result'
 import type { Ref } from 'vue'
 import { get, post, put, del, postSSEStream } from '@/request'
 import type { ApplicationForm, TempChatDto } from '@/api/type/application'
+import type { MCPServer } from '@/api/type/mcpServer'
 /**
  * 创建Agent
  */
@@ -71,6 +72,38 @@ const deleteApplication: (id: number) => Promise<Result<any>> = (id) => {
   return del(`/application/${id}`)
 }
 
+/**
+ * 获取应用关联的MCP服务器
+ */
+const getApplicationMcpServers: (applicationId: number, loading?: Ref<boolean>) => Promise<Result<{ mcpServers: MCPServer[] }>> = (
+  applicationId,
+  loading
+) => {
+  return get(`/application/${applicationId}/mcp-servers`, {}, loading)
+}
+
+/**
+ * 更新应用关联的MCP服务器
+ */
+const updateApplicationMcpServers: (applicationId: number, mcpServerIds: number[], loading?: Ref<boolean>) => Promise<Result<any>> = (
+  applicationId,
+  mcpServerIds,
+  loading
+) => {
+  return post(`/application/${applicationId}/mcp-servers`, mcpServerIds, {}, loading)
+}
+
+/**
+ * 移除应用的MCP服务器关联
+ */
+const removeApplicationMcpServer: (applicationId: number, mcpServerId: number, loading?: Ref<boolean>) => Promise<Result<any>> = (
+  applicationId,
+  mcpServerId,
+  loading
+) => {
+  return del(`/application/${applicationId}/mcp-servers/${mcpServerId}`, {}, loading)
+}
+
 export default {
   createApplication,
   getApplicationById,
@@ -78,5 +111,8 @@ export default {
   openTempChat,
   postTempChatMessageStream,
   listApplications,
-  deleteApplication
+  deleteApplication,
+  getApplicationMcpServers,
+  updateApplicationMcpServers,
+  removeApplicationMcpServer
 }
